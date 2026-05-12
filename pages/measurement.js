@@ -136,6 +136,12 @@ function renderSoilData(container) {
             <select id="soc-farm-filter"><option value="">Tất cả nông hộ</option></select>
             <select><option value="">Tất cả lớp đất</option><option>0-15cm</option><option>15-30cm</option><option>30-50cm</option></select>
             <div style="flex:1;"></div>
+            <button class="btn btn-secondary" onclick="downloadSOCTemplate()" title="Tải file CSV mẫu" style="border-color:var(--text-muted);color:var(--text-muted);">
+                <i class="fas fa-download"></i> Template
+            </button>
+            <button class="btn btn-secondary" onclick="openSOCImportModal()" style="border-color:var(--info);color:var(--info);">
+                <i class="fas fa-file-upload"></i> Nhập từ file
+            </button>
             <button class="btn btn-primary" onclick="openSOCModal()"><i class="fas fa-plus"></i> Thêm mẫu phân tích</button>
         </div>
         <div class="grid-2" style="margin-top:20px;">
@@ -197,7 +203,79 @@ function renderSoilData(container) {
                 </table>
             </div>
         </div>
-        <!-- Modal -->
+        <!-- Modal Import -->
+        <div class="modal-overlay" id="soc-import-modal">
+            <div class="modal" style="max-width:860px;">
+                <div class="modal-header">
+                    <h3><i class="fas fa-file-upload" style="color:var(--info);margin-right:8px;"></i> Nhập dữ liệu SOC từ file CSV / Excel</h3>
+                    <button class="modal-close" onclick="closeSOCImportModal()"><i class="fas fa-times"></i></button>
+                </div>
+                <div class="modal-body">
+                    <!-- Hướng dẫn cột -->
+                    <div style="background:var(--bg-light);border-radius:8px;padding:12px 16px;margin-bottom:16px;font-size:12px;">
+                        <div style="font-weight:600;color:var(--info);margin-bottom:6px;"><i class="fas fa-info-circle"></i> Cột cần có trong file (tên cột linh hoạt, không phân biệt hoa thường):</div>
+                        <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:6px;">
+                            <span><code>Ngày</code> — ngày lấy mẫu</span>
+                            <span><code>Nông hộ</code> — tên nông hộ</span>
+                            <span><code>Thời kỳ</code> — Đầu vụ / Cuối vụ</span>
+                            <span><code>Lớp đất</code> — 0-15cm…</span>
+                            <span><code>OC (g/kg)</code> — hàm lượng OC</span>
+                            <span><code>M_sample (g)</code> — khối lượng mẫu</span>
+                            <span><code>D (mm)</code> — đường kính ống</span>
+                            <span><code>N</code> — số lõi</span>
+                            <span><code>Phòng lab</code> — tuỳ chọn</span>
+                            <span><code>Ghi chú</code> — tuỳ chọn</span>
+                        </div>
+                    </div>
+                    <!-- Upload area -->
+                    <div id="soc-import-dropzone" onclick="document.getElementById('soc-file-input').click()"
+                        style="border:2px dashed var(--info);border-radius:10px;padding:32px;text-align:center;cursor:pointer;transition:.2s;"
+                        ondragover="event.preventDefault();this.style.background='var(--bg-light)';"
+                        ondragleave="this.style.background='';"
+                        ondrop="event.preventDefault();this.style.background='';handleSOCFileUpload(event.dataTransfer.files[0]);">
+                        <i class="fas fa-cloud-upload-alt" style="font-size:32px;color:var(--info);margin-bottom:10px;display:block;"></i>
+                        <div style="font-weight:600;margin-bottom:4px;">Kéo thả file vào đây hoặc nhấn để chọn</div>
+                        <div style="font-size:12px;color:var(--text-muted);">Hỗ trợ: CSV (.csv) và Excel (.xlsx, .xls)</div>
+                        <input type="file" id="soc-file-input" accept=".csv,.xlsx,.xls" style="display:none;" onchange="handleSOCFileUpload(this.files[0])">
+                    </div>
+                    <!-- Preview table -->
+                    <div id="soc-import-preview" style="display:none;margin-top:16px;">
+                        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+                            <div id="soc-import-summary" style="font-size:13px;font-weight:600;color:var(--success);"></div>
+                            <button class="btn btn-secondary btn-sm" onclick="document.getElementById('soc-file-input').click()"><i class="fas fa-redo"></i> Đổi file</button>
+                        </div>
+                        <div class="table-wrapper" style="max-height:320px;overflow-y:auto;">
+                            <table class="data-table" style="font-size:12px;">
+                                <thead>
+                                    <tr style="background:var(--info);">
+                                        <th style="color:white;">Ngày</th>
+                                        <th style="color:white;">Nông hộ</th>
+                                        <th style="color:white;">Thời kỳ</th>
+                                        <th style="color:white;">Lớp đất</th>
+                                        <th style="color:white;">OC (g/kg)</th>
+                                        <th style="color:white;">M_sample (g)</th>
+                                        <th style="color:white;">D (mm)</th>
+                                        <th style="color:white;">N</th>
+                                        <th style="color:white;background:#1a7a8a;">M_n,dl,SOC (tC/ha)</th>
+                                        <th style="color:white;">Lab</th>
+                                        <th style="color:white;">Trạng thái</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="soc-import-preview-body"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" onclick="closeSOCImportModal()">Hủy</button>
+                    <button class="btn btn-primary" id="soc-import-confirm-btn" style="display:none;" onclick="confirmSOCImport()">
+                        <i class="fas fa-database"></i> <span id="soc-import-confirm-label">Nhập dữ liệu</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal thêm từng mẫu -->
         <div class="modal-overlay" id="soc-modal">
             <div class="modal">
                 <div class="modal-header">
@@ -513,4 +591,232 @@ function loadSOCData() {
             farms.map(f => `<option value="${f}">${f}</option>`).join('');
         farmFilter.value = currentValue;
     }
+}
+
+/* ===== SOC FILE IMPORT ===== */
+
+let socImportRows = [];
+
+function openSOCImportModal() {
+    document.getElementById('soc-import-modal').classList.add('show');
+    socImportRows = [];
+    document.getElementById('soc-import-preview').style.display = 'none';
+    document.getElementById('soc-import-confirm-btn').style.display = 'none';
+    document.getElementById('soc-file-input').value = '';
+}
+
+function closeSOCImportModal() {
+    document.getElementById('soc-import-modal').classList.remove('show');
+}
+
+// Chuẩn hoá tên cột
+function normalizeHeader(h) {
+    return (h || '').toLowerCase().trim()
+        .replace(/\s+/g, ' ')
+        .replace(/[()]/g, '')
+        .replace('nông hộ', 'farm')
+        .replace('ngày', 'date')
+        .replace('thời kỳ', 'period')
+        .replace('lớp đất', 'layer')
+        .replace('oc g/kg', 'oc')
+        .replace('m_sample g', 'msample')
+        .replace('m sample g', 'msample')
+        .replace('khối lượng mẫu', 'msample')
+        .replace('msample g', 'msample')
+        .replace('đường kính', 'd')
+        .replace('d mm', 'd')
+        .replace('số lõi', 'n')
+        .replace('phòng lab', 'lab')
+        .replace('ghi chú', 'notes')
+        .replace('notes', 'notes')
+        .replace('farm', 'farm')
+        .replace('date', 'date');
+}
+
+function mapHeader(headers) {
+    const map = {};
+    headers.forEach((h, i) => {
+        const n = normalizeHeader(h);
+        if (n.includes('date') || n.includes('ngày')) map.date = i;
+        else if (n.includes('farm') || n.includes('nông hộ') || n === 'nong ho') map.farm = i;
+        else if (n.includes('period') || n.includes('thời kỳ') || n.includes('thoi ky')) map.period = i;
+        else if (n.includes('layer') || n.includes('lớp') || n.includes('lop')) map.layer = i;
+        else if (n.includes('oc') || n.includes('organic carbon')) map.oc = i;
+        else if (n.includes('msample') || n.includes('m_sample') || n.includes('mẫu') || n.includes('m sample')) map.msample = i;
+        else if ((n === 'd' || n.includes('d mm') || n.includes('diameter') || n.includes('đường kính') || n.includes('duong kinh')) && !map.d) map.d = i;
+        else if (n === 'n' || n.includes('cores') || n.includes('lõi') || n.includes('loi')) map.n = i;
+        else if (n.includes('lab') || n.includes('phòng')) map.lab = i;
+        else if (n.includes('notes') || n.includes('ghi chú') || n.includes('ghi chu')) map.notes = i;
+    });
+    return map;
+}
+
+function parseRowToSOC(row, map) {
+    const get = (key, def = '') => {
+        const idx = map[key];
+        return idx !== undefined ? (row[idx] ?? def) : def;
+    };
+
+    const date = get('date') || new Date().toISOString().slice(0, 10);
+    const farm = get('farm', 'Chưa xác định');
+    const periodRaw = (get('period', 'cuoi vu') + '').toLowerCase();
+    const isBeginning = periodRaw.includes('đầu') || periodRaw.includes('dau') || periodRaw.includes('begin') || periodRaw.includes('start') || periodRaw === 't-x';
+    const layer = get('layer', '0-15cm') || '0-15cm';
+    const ocGperKg = parseFloat(get('oc', 0)) || 0;
+    const mSample = parseFloat(get('msample', 0)) || 0;
+    const D = parseFloat(get('d', 52)) || 52;
+    const N = parseInt(get('n', 1)) || 1;
+    const lab = get('lab', '');
+    const notes = get('notes', '');
+
+    const socMassVM0042 = calculateSOCMassVM0042(mSample, D, N, ocGperKg);
+    const soc = ocGperKg ? (ocGperKg / 10) : 0;
+
+    return { date, farm, layer, ocGperKg, soc, mSample, tubeDiameter: D, numCores: N, lab, notes, isBeginning, socMassVM0042: socMassVM0042 ? parseFloat(socMassVM0042) : null, ok: !!(ocGperKg && mSample) };
+}
+
+function handleSOCFileUpload(file) {
+    if (!file) return;
+    const ext = file.name.split('.').pop().toLowerCase();
+
+    if (ext === 'csv') {
+        const reader = new FileReader();
+        reader.onload = e => parseSOCCSV(e.target.result);
+        reader.readAsText(file, 'UTF-8');
+    } else if (ext === 'xlsx' || ext === 'xls') {
+        if (typeof XLSX === 'undefined') { alert('Thư viện XLSX chưa tải. Vui lòng dùng file CSV.'); return; }
+        const reader = new FileReader();
+        reader.onload = e => {
+            const wb = XLSX.read(e.target.result, { type: 'array' });
+            const ws = wb.Sheets[wb.SheetNames[0]];
+            const aoa = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
+            processSOCRows(aoa);
+        };
+        reader.readAsArrayBuffer(file);
+    } else {
+        alert('Chỉ hỗ trợ file .csv, .xlsx, .xls');
+    }
+}
+
+function parseSOCCSV(text) {
+    const lines = text.split(/\r?\n/).filter(l => l.trim());
+    const aoa = lines.map(line => {
+        const cols = [];
+        let cur = '', inQ = false;
+        for (let c of line) {
+            if (c === '"') { inQ = !inQ; }
+            else if (c === ',' && !inQ) { cols.push(cur.trim()); cur = ''; }
+            else cur += c;
+        }
+        cols.push(cur.trim());
+        return cols;
+    });
+    processSOCRows(aoa);
+}
+
+function processSOCRows(aoa) {
+    if (aoa.length < 2) { alert('File không có dữ liệu hợp lệ.'); return; }
+
+    const headers = aoa[0];
+    const map = mapHeader(headers);
+
+    // Kiểm tra cột bắt buộc
+    const missing = [];
+    if (map.farm === undefined) missing.push('Nông hộ');
+    if (map.oc === undefined) missing.push('OC (g/kg)');
+    if (map.msample === undefined) missing.push('M_sample (g)');
+    if (missing.length > 0) {
+        alert(`File thiếu cột bắt buộc: ${missing.join(', ')}\n\nCác cột tìm thấy: ${headers.join(', ')}\n\nHãy tải template để xem định dạng đúng.`);
+        return;
+    }
+
+    socImportRows = [];
+    const tbodyRows = [];
+
+    for (let i = 1; i < aoa.length; i++) {
+        const row = aoa[i];
+        if (!row || row.every(c => !c)) continue;
+        const parsed = parseRowToSOC(row, map);
+        socImportRows.push(parsed);
+
+        const statusBadge = parsed.ok
+            ? '<span class="badge badge-green">OK</span>'
+            : '<span class="badge badge-orange">Thiếu số liệu</span>';
+        const socMassDisplay = parsed.socMassVM0042 != null
+            ? `<strong style="color:var(--primary-light);">${parsed.socMassVM0042.toFixed(4)}</strong> tC/ha`
+            : '<span style="color:var(--text-muted);">--</span>';
+
+        tbodyRows.push(`<tr>
+            <td>${parsed.date}</td>
+            <td>${parsed.farm}</td>
+            <td>${parsed.isBeginning ? '<span class="badge badge-blue">Đầu vụ</span>' : '<span class="badge badge-green">Cuối vụ</span>'}</td>
+            <td>${parsed.layer}</td>
+            <td>${parsed.ocGperKg || '--'}</td>
+            <td>${parsed.mSample || '--'}</td>
+            <td>${parsed.tubeDiameter}</td>
+            <td>${parsed.numCores}</td>
+            <td>${socMassDisplay}</td>
+            <td>${parsed.lab || '--'}</td>
+            <td>${statusBadge}</td>
+        </tr>`);
+    }
+
+    const okCount = socImportRows.filter(r => r.ok).length;
+    document.getElementById('soc-import-preview-body').innerHTML = tbodyRows.join('');
+    document.getElementById('soc-import-summary').innerHTML =
+        `<i class="fas fa-check-circle" style="color:var(--success);"></i> Đọc được <strong>${socImportRows.length}</strong> dòng — <strong>${okCount}</strong> dòng hợp lệ (có đủ OC và M_sample để tính M<sub>n,dl,SOC</sub>)`;
+    document.getElementById('soc-import-preview').style.display = 'block';
+    document.getElementById('soc-import-confirm-btn').style.display = 'inline-flex';
+    document.getElementById('soc-import-confirm-label').textContent = `Nhập ${socImportRows.length} mẫu vào hệ thống`;
+}
+
+function confirmSOCImport() {
+    if (socImportRows.length === 0) return;
+    const now = new Date().toISOString();
+    const newEntries = socImportRows.map(r => ({
+        id: Date.now() + Math.random(),
+        date: r.date,
+        farm: r.farm,
+        layer: r.layer,
+        ocGperKg: r.ocGperKg,
+        soc: r.soc,
+        mSample: r.mSample,
+        tubeDiameter: r.tubeDiameter,
+        numCores: r.numCores,
+        density: 0,
+        socMassVM0042: r.socMassVM0042,
+        carbonStock: 0,
+        lab: r.lab,
+        notes: r.notes,
+        isBeginning: r.isBeginning,
+        recorder: currentUser?.name || 'Import',
+        createdAt: now
+    }));
+
+    socEntries.push(...newEntries);
+    localStorage.setItem('mrv_soc', JSON.stringify(socEntries));
+    closeSOCImportModal();
+    loadSOCData();
+    addAuditEntry('Import dữ liệu SOC từ file', `${newEntries.length} mẫu — ${[...new Set(newEntries.map(e => e.farm))].join(', ')}`, 'blue');
+}
+
+function downloadSOCTemplate() {
+    const header = ['Ngày', 'Nông hộ', 'Thời kỳ', 'Lớp đất', 'OC (g/kg)', 'M_sample (g)', 'D (mm)', 'N', 'Phòng lab', 'Ghi chú'];
+    const examples = [
+        ['2025-01-15', 'Hộ Nguyễn Văn A', 'Đầu vụ', '0-15cm', '18.5', '250', '52', '3', 'Lab Đại học Cần Thơ', 'Lấy mẫu đầu vụ'],
+        ['2025-01-15', 'Hộ Nguyễn Văn A', 'Đầu vụ', '15-30cm', '12.3', '220', '52', '3', 'Lab Đại học Cần Thơ', ''],
+        ['2025-06-20', 'Hộ Nguyễn Văn A', 'Cuối vụ', '0-15cm', '21.0', '255', '52', '3', 'Lab Đại học Cần Thơ', 'Lấy mẫu cuối vụ'],
+        ['2025-01-15', 'Hộ Trần Thị B', 'Đầu vụ', '0-15cm', '15.8', '240', '52', '3', '', ''],
+    ];
+    const q = v => `"${(v + '').replace(/"/g, '""')}"`;
+    const csv = '﻿' + [header, ...examples].map(r => r.map(q).join(',')).join('\r\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'SOC_Template_VM0042.csv';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
 }
