@@ -692,9 +692,9 @@ function parseRowToSOC(row, map) {
         periodRaw.includes('begin') || periodRaw.includes('start') ||
         periodRaw === 't-x' || /kỳ\s*1/.test(periodRaw) || /ky\s*1/.test(periodRaw);
     const layer = (get('layer', '0-20') + '').trim() || '0-20';
-    const ocGperKg = parseFloat(get('oc', 0)) || 0;
-    const mSample  = parseFloat(get('msample', 0)) || 0;
-    const D        = parseFloat(get('d', 52)) || 52;
+    const ocGperKg = parseLocaleFloat(get('oc', 0));
+    const mSample  = parseLocaleFloat(get('msample', 0));
+    const D        = parseLocaleFloat(get('d', 52)) || 52;
     const N        = parseInt(get('n', 1)) || 1;
     const lab      = get('lab', '');
     const notes    = get('notes', '');
@@ -747,10 +747,35 @@ function parseSOCCSV(text) {
     processSOCRows(aoa);
 }
 
+// Tìm dòng header thực sự (bỏ qua các dòng tiêu đề/subtitle phía trên)
+function findHeaderRowIndex(aoa) {
+    for (let i = 0; i < Math.min(aoa.length, 10); i++) {
+        const row = aoa[i];
+        const normalized = row.map(h => normalizeHeader(h + ''));
+        const hits = normalized.filter(n =>
+            n.includes('date') || n === 'farm' || n.includes('farm') ||
+            n === 'oc' || n.includes('msample') ||
+            n.includes('period') || n.includes('layer')
+        ).length;
+        if (hits >= 3) return i;
+    }
+    return 0;
+}
+
+// Xử lý số dùng dấu phẩy thập phân kiểu Việt Nam / châu Âu: "18,4" → 18.4
+function parseLocaleFloat(v) {
+    const s = (v + '').trim().replace(/\s/g, '');
+    if (!s) return 0;
+    if (s.includes('.') && s.includes(',')) return parseFloat(s.replace(/\./g, '').replace(',', '.')) || 0;
+    if (s.includes(',')) return parseFloat(s.replace(',', '.')) || 0;
+    return parseFloat(s) || 0;
+}
+
 function processSOCRows(aoa) {
     if (aoa.length < 2) { alert('File không có dữ liệu hợp lệ.'); return; }
 
-    const headers = aoa[0];
+    const headerIdx = findHeaderRowIndex(aoa);
+    const headers = aoa[headerIdx];
     const map = mapHeader(headers);
 
     // Kiểm tra cột bắt buộc
@@ -766,7 +791,7 @@ function processSOCRows(aoa) {
     socImportRows = [];
     const tbodyRows = [];
 
-    for (let i = 1; i < aoa.length; i++) {
+    for (let i = headerIdx + 1; i < aoa.length; i++) {
         const row = aoa[i];
         if (!row || row.every(c => !c)) continue;
         const parsed = parseRowToSOC(row, map);
