@@ -834,25 +834,47 @@ function confirmSOCImport() {
 }
 
 function downloadSOCTemplate() {
-    // Đúng theo mẫu phòng lab Việt Nam (ảnh tham chiếu)
-    const header = ['Ngày lấy mẫu', 'Nông hộ', 'Thời kỳ (Kỳ đo)', 'Lớp đất dl (cm)', 'OC (g/kg)', 'M_sample (g)', 'D (mm)', 'N (lõi)', 'Ghi chú'];
-    const examples = [
-        ['15/03/2023', 'Trần Minh Quang', 'Kỳ 1 (Đầu vụ)', '0-20', '18.4', '312.5', '70', '5', 'Lấy mẫu đại diện 5 điểm trên 1 ha'],
-        ['15/03/2023', 'Trần Minh Quang', 'Kỳ 1 (Đầu vụ)', '20-40', '12.1', '298.7', '70', '5', 'Mẫu tổ hợp, sấy khô 105°C/24h'],
-        ['15/03/2023', 'Trần Minh Quang', 'Kỳ 1 (Đầu vụ)', '40-60', '7.8',  '285.3', '70', '5', 'Phương pháp Walkley-Black'],
-        ['20/03/2024', 'Trần Minh Quang', 'Kỳ 2 (Cuối vụ)', '0-20', '21.6', '318.2', '70', '5', 'Lấy mẫu đại diện 5 điểm trên 1 ha'],
-        ['20/03/2024', 'Trần Minh Quang', 'Kỳ 2 (Cuối vụ)', '20-40', '13.9', '301.4', '70', '5', 'Mẫu tổ hợp, sấy khô 105°C/24h'],
-        ['20/03/2024', 'Trần Minh Quang', 'Kỳ 2 (Cuối vụ)', '40-60', '8.5',  '289.1', '70', '5', 'Phương pháp Walkley-Black'],
+    if (typeof XLSX === 'undefined') { alert('Thư viện Excel chưa tải, vui lòng thử lại.'); return; }
+
+    const data = [
+        // Dòng tiêu đề
+        ['Ngày lấy mẫu', 'Nông hộ', 'Thời kỳ (Kỳ đo)', 'Lớp đất dl (cm)', 'OC (g/kg)', 'M_sample (g)', 'D (mm)', 'N (lõi)', 'Ghi chú'],
+        // Dữ liệu mẫu — Kỳ 1 (Đầu vụ)
+        ['15/03/2023', 'Trần Minh Quang', 'Kỳ 1 (Đầu vụ)', '0-20',  18.4, 312.5, 70, 5, 'Lấy mẫu đại diện 5 điểm trên 1 ha'],
+        ['15/03/2023', 'Trần Minh Quang', 'Kỳ 1 (Đầu vụ)', '20-40', 12.1, 298.7, 70, 5, 'Mẫu tổ hợp, sấy khô 105°C/24h'],
+        ['15/03/2023', 'Trần Minh Quang', 'Kỳ 1 (Đầu vụ)', '40-60',  7.8, 285.3, 70, 5, 'Phương pháp Walkley-Black'],
+        // Dữ liệu mẫu — Kỳ 2 (Cuối vụ)
+        ['20/03/2024', 'Trần Minh Quang', 'Kỳ 2 (Cuối vụ)', '0-20',  21.6, 318.2, 70, 5, 'Lấy mẫu đại diện 5 điểm trên 1 ha'],
+        ['20/03/2024', 'Trần Minh Quang', 'Kỳ 2 (Cuối vụ)', '20-40', 13.9, 301.4, 70, 5, 'Mẫu tổ hợp, sấy khô 105°C/24h'],
+        ['20/03/2024', 'Trần Minh Quang', 'Kỳ 2 (Cuối vụ)', '40-60',  8.5, 289.1, 70, 5, 'Phương pháp Walkley-Black'],
+        // Dòng trống + hướng dẫn
+        [],
+        ['--- HƯỚNG DẪN ---', '', '', '', '', '', '', '', ''],
+        ['Ngày lấy mẫu', 'Định dạng DD/MM/YYYY hoặc YYYY-MM-DD'],
+        ['Thời kỳ (Kỳ đo)', 'Kỳ 1 (Đầu vụ) = mẫu đầu kỳ  |  Kỳ 2 (Cuối vụ) = mẫu cuối kỳ'],
+        ['Lớp đất dl (cm)', 'VD: 0-20, 20-40, 40-60'],
+        ['OC (g/kg)', 'Hàm lượng carbon hữu cơ từ kết quả phòng lab (g/kg)'],
+        ['M_sample (g)', 'Khối lượng mẫu đất trong ống lấy mẫu (gram)'],
+        ['D (mm)', 'Đường kính trong ống lấy mẫu (mm) — thường 52 hoặc 70'],
+        ['N (lõi)', 'Số lõi đất lấy mẫu trên mỗi điểm'],
     ];
-    const q = v => `"${(v + '').replace(/"/g, '""')}"`;
-    const csv = '﻿' + [header, ...examples].map(r => r.map(q).join(',')).join('\r\n');
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'SOC_DuLieuXetNghiemDat_Template.csv';
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+
+    const ws = XLSX.utils.aoa_to_sheet(data);
+
+    // Độ rộng cột
+    ws['!cols'] = [
+        { wch: 16 }, // Ngày
+        { wch: 22 }, // Nông hộ
+        { wch: 20 }, // Thời kỳ
+        { wch: 16 }, // Lớp đất
+        { wch: 12 }, // OC
+        { wch: 14 }, // M_sample
+        { wch: 10 }, // D
+        { wch: 10 }, // N
+        { wch: 45 }, // Ghi chú
+    ];
+
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'DuLieu_SOC_VM0042');
+    XLSX.writeFile(wb, 'SOC_DuLieuXetNghiemDat_Template.xlsx');
 }
