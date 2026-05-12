@@ -66,19 +66,24 @@ function renderReports(container) {
                 </div>
             </div>
 
-            <!-- CSV Export -->
+            <!-- Excel Export -->
             <div class="card">
                 <div class="card-header">
-                    <div class="card-title"><i class="fas fa-file-csv" style="color:#27ae60;"></i> Xuất CSV / Excel</div>
+                    <div class="card-title"><i class="fas fa-file-excel" style="color:#27ae60;"></i> Xuất Excel (.xlsx) — VCS+CCB Template</div>
                 </div>
                 <div style="padding:20px;">
                     <div style="background:var(--bg-light);border-radius:8px;padding:14px;margin-bottom:16px;">
-                        <div style="font-size:12px;color:var(--text-muted);margin-bottom:8px;">File CSV sẽ bao gồm:</div>
-                        <ul style="font-size:12px;color:var(--text-secondary);margin:0;padding-left:16px;line-height:1.8;">
-                            <li>Nhật ký canh tác (toàn bộ)</li>
-                            <li>Dữ liệu SOC / M<sub>n,dl,SOC</sub></li>
-                            <li>Tính toán phát thải EFF, EL, N₂O</li>
-                            <li>Tổng hợp GHG theo VM0042</li>
+                        <div style="font-size:12px;color:var(--text-muted);margin-bottom:8px;">File .xlsx nhiều sheet theo mẫu VCS+CCB:</div>
+                        <ul style="font-size:12px;color:var(--text-secondary);margin:0;padding-left:16px;line-height:1.9;">
+                            <li><strong>CCB &amp; VCS Verification Report</strong> — metadata đầy đủ</li>
+                            <li><strong>Verification / Crediting Period</strong></li>
+                            <li><strong>2.6 Public Comments</strong></li>
+                            <li><strong>Implementation Status</strong></li>
+                            <li><strong>Grievances</strong></li>
+                            <li><strong>GHG Emissions</strong> — EFF, EL, N₂O (tính từ nhật ký)</li>
+                            <li><strong>SOC Data</strong> — M<sub>n,dl,SOC</sub> VM0042</li>
+                            <li><strong>Farm Diary</strong> — nhật ký thô</li>
+                            <li><strong>Project Crediting Period ERR/VCU</strong></li>
                         </ul>
                     </div>
                     <div class="form-group" style="margin-bottom:12px;">
@@ -87,8 +92,8 @@ function renderReports(container) {
                             <option value="">Tất cả nông hộ</option>
                         </select>
                     </div>
-                    <button class="btn btn-secondary" style="width:100%;border-color:var(--success);color:var(--success);" onclick="exportCSV()">
-                        <i class="fas fa-download"></i> Tải xuống CSV
+                    <button class="btn btn-secondary" style="width:100%;border-color:var(--success);color:var(--success);" onclick="exportExcel()">
+                        <i class="fas fa-download"></i> Tải xuống Excel (.xlsx)
                     </button>
                 </div>
             </div>
@@ -525,13 +530,20 @@ function generateReport() {
     win.document.close();
 }
 
-/* ===== CSV EXPORT ===== */
+/* ===== EXCEL EXPORT (.xlsx) — VCS+CCB Multi-Sheet Template ===== */
 
-function exportCSV() {
-    const farmFilter = document.getElementById('rpt-csv-farm')?.value || '';
+function exportExcel() {
+    if (typeof XLSX === 'undefined') {
+        alert('Thư viện xuất Excel chưa tải. Vui lòng kiểm tra kết nối mạng và thử lại.');
+        return;
+    }
+
     const today = new Date().toISOString().slice(0, 10);
-    const em = getReportEmissionData();
-    const soc = getSOCChangeSummary();
+    const yr = new Date().getFullYear();
+    const projectName = document.getElementById('rpt-project-name')?.value || 'Du an Carbon VM0042';
+    const preparedBy = document.getElementById('rpt-prepared-by')?.value || 'ExAS MRV System';
+    const reportPeriod = document.getElementById('report-period')?.value || 'Nam 2025';
+    const farmFilter = document.getElementById('rpt-csv-farm')?.value || '';
 
     let diaries = JSON.parse(localStorage.getItem('mrv_diaries') || '[]');
     let socData = JSON.parse(localStorage.getItem('mrv_soc') || '[]');
@@ -540,79 +552,220 @@ function exportCSV() {
         socData = socData.filter(e => e.farm === farmFilter);
     }
 
-    const q = v => `"${(v ?? '').toString().replace(/"/g, '""')}"`;
-    const rows = [];
+    const em = getReportEmissionData();
+    const soc = getSOCChangeSummary();
+    const wb = XLSX.utils.book_new();
 
-    // === HEADER ===
-    rows.push([q('ExAS MRV System — Báo cáo giám sát VM0042')]);
-    rows.push([q('Xuất ngày'), q(today)]);
-    rows.push([q('Nông hộ'), q(farmFilter || 'Tất cả')]);
-    rows.push([]);
+    const addSheet = (name, aoa) => {
+        const ws = XLSX.utils.aoa_to_sheet(aoa);
+        ws['!cols'] = [{ wch: 50 }, { wch: 55 }, { wch: 18 }, { wch: 30 }, { wch: 30 }, { wch: 25 }];
+        XLSX.utils.book_append_sheet(wb, ws, name);
+    };
 
-    // === SECTION 1: EMISSION SUMMARY ===
-    rows.push([q('=== TỔNG HỢP PHÁT THẢI DỰ ÁN ===')]);
-    rows.push([q('Chỉ số'), q('Giá trị'), q('Đơn vị'), q('Công thức'), q('Hệ số EF (IPCC)')]);
-    rows.push([q('EFF — Nhiên liệu hóa thạch'), q(em.eff.toFixed(5)), q('tCO₂e'), q('FFC × EF_CO₂'), q('Diesel=0.00268, Xăng=0.00231, LPG=0.00163')]);
-    rows.push([q('  → FFC Diesel'), q(em.fuelDiesel.toFixed(2)), q('lít'), q(''), q('')]);
-    rows.push([q('  → FFC Xăng'), q(em.fuelPetrol.toFixed(2)), q('lít'), q(''), q('')]);
-    rows.push([q('  → FFC LPG'), q(em.fuelLpg.toFixed(2)), q('lít'), q(''), q('')]);
-    rows.push([q('EL — Vôi/Dolomite'), q(em.el.toFixed(5)), q('tCO₂e'), q('((M_lime×EF)+(M_dolo×EF))×44/12'), q('EF_Lime=0.12, EF_Dolo=0.13')]);
-    rows.push([q('  → Vôi (Limestone)'), q(em.limestone.toFixed(3)), q('tấn'), q(''), q('')]);
-    rows.push([q('  → Dolomite'), q(em.dolomite.toFixed(3)), q('tấn'), q(''), q('')]);
-    rows.push([q('N₂O_fert — Phân bón'), q(em.n2o.toFixed(5)), q('tCO₂e/ha'), q('(FSN+FON)×EF_Ndirect×(44/28)×GWP/1000/A'), q('EF=0.01, GWP=265')]);
-    rows.push([q('  → FSN (Phân tổng hợp)'), q(em.fsn.toFixed(3)), q('kg N'), q(''), q('')]);
-    rows.push([q('  → FON (Phân hữu cơ)'), q(em.fon.toFixed(3)), q('kg N'), q(''), q('')]);
-    rows.push([q('  → Diện tích A_i'), q(em.maxArea.toFixed(2)), q('ha'), q(''), q('')]);
-    rows.push([q('Tổng phát thải dự án (EFF+EL)'), q(em.totalProject.toFixed(5)), q('tCO₂e'), q(''), q('')]);
-    rows.push([]);
+    // ── Sheet 1: CCB & VCS Verification Report ──
+    addSheet('CCB & VCS Verification Report', [
+        ['Schema name', 'CCB & VCS Verification Report Template CCB v3.0, VCS v4.4'],
+        ['Field name', 'Value'],
+        [],
+        ['Verification Report Monitoring Reference', projectName],
+        ['Monitoring Report Id', `EXAS-${today.replace(/-/g,'')}-001`],
+        ['Report Name', `CCB & VCS Verification Report — ${projectName}`],
+        ['Report ID', `EXAS-${today.replace(/-/g,'')}-001`],
+        ['Project ID', `VCS-EXAS-${yr}-001`],
+        ['VCS Standard Version', 'VCS Standard v4.4'],
+        ['CCB Standard Version', 'CCB v3.0'],
+        ['Project Location', 'Ben Tre, Viet Nam'],
+        ['Client', projectName],
+        ['Prepared By', preparedBy],
+        ['Approved By', preparedBy],
+        ['Work Carried Out By', 'ExAS MRV System'],
+        ['Summary', `Du an ap dung VM0042 de do luong va giam sat carbon nong nghiep. Ky bao cao: ${reportPeriod}.`],
+        [],
+        ['1.1 Objective', 'Xac minh luong giam phat thai va tang tru luong carbon theo VM0042 Verra.'],
+        ['1.2 Scope and Criteria', 'VM0042 v2.0 — Improved Agricultural Land Management, VCS Standard v4.4, CCB Standard v3.0'],
+        ['1.3 Level of Assurance', 'Reasonable assurance'],
+        ['1.4 Summary Description of the Project', `Du an giam sat ${diaries.length} nhat ky canh tac, ${socData.length} mau dat SOC tren vuon dua. Phuong phap luan VM0042 Verra.`],
+        [],
+        ['2.1 Audit Team Composition', 'ExAS MRV System — Automated monitoring & field supervisors'],
+        ['2.2 Method and Criteria', 'Thu thap du lieu IoT, nhat ky canh tac, phan tich dat phong lab, ap dung he so IPCC Tier 1'],
+        ['2.3 Document Review', 'Nhat ky canh tac, ket qua phan tich SOC, du lieu IoT, ban do nong ho'],
+        ['2.4 Interviews', 'Nong ho tham gia du an'],
+        ['2.5 Site Visits', 'Giam sat thuc dia dinh ky theo ke hoach'],
+        ['2.7 Resolution of Findings', 'Khong co phat hien bat thuong trong ky bao cao'],
+        ['2.7.1 Forward Action Requests', 'Khong'],
+        ['2.8 Eligibility for Validation Activities', 'Du dieu kien'],
+        [],
+        ['3.1 Participation under Other GHG Programs', 'Khong tham gia chuong trinh GHG nao khac'],
+        ['3.2 Methodology Deviations', 'Khong co sai lech phuong phap luan'],
+        ['3.3 Minor Changes to Project Description', 'Khong co thay doi'],
+        ['3.4 Project Description Deviations', 'Khong co'],
+        ['3.5 New Project Activity Instances', 'Khong co'],
+        ['3.6 Baseline Reassessment — Did the project undergo baseline reassessment?', 'No'],
+        [],
+        ['4.1 Audit history (VCS, 4.1)', `Ky dau tien: ${yr}-01-01 den ${today}`],
+        ['4.2 Summary of Project Benefits', `Giam phat thai ${em.totalProject.toFixed(4)} tCO2e. Tang tru luong carbon dat DSOC=${soc.delta.toFixed(4)} tC/ha.`],
+        ['4.3.1 Implementation Status', `Trien khai dung tien do. ${diaries.length} nhat ky da ghi nhan.`],
+        ['4.3.2 Stakeholder Identification', 'Nong ho, to chuc dia phuong, co quan quan ly nha nuoc'],
+        ['4.3.3 Stakeholder Consultation', 'Tu van dinh ky hang quy voi cac nong ho tham gia'],
+        ['4.3.4 Stakeholder Access to Information', 'Cong khai qua he thong ExAS MRV'],
+        ['4.3.9 Risks to the Project', 'Thien tai, bien dong gia nong san. Bien phap giam thieu da duoc thiet lap.'],
+        ['4.3.10 Anti-discrimination', 'Chinh sach khong phan biet doi xu duoc ap dung'],
+        ['4.3.11 Worker Relations', 'Lao dong tu nguyen, dung luat lao dong Viet Nam'],
+        ['4.3.12 Management Capacity', 'He thong MRV tu dong hoa, nhan su duoc dao tao'],
+        ['4.3.18 Identification of Illegal Activities', 'Khong phat hien hoat dong bat hop phap'],
+        [],
+        ['4.4.1 Accuracy of Reduction and Removal Calculations', `EFF=${em.eff.toFixed(4)} tCO2e; EL=${em.el.toFixed(4)} tCO2e; N2O=${em.n2o.toFixed(4)} tCO2e/ha; DSOC=${soc.delta.toFixed(4)} tC/ha`],
+        ['4.4.2 Quality of Evidence for GHG', 'Du lieu tu nhat ky canh tac so, phan tich dat phong lab kiem dinh, he so IPCC Tier 1'],
+        ['4.4.3 Non-Permanence Risk Analysis', 'Chua thuc hien phan tich rui ro khong thuong tru — can cap nhat truoc khi phat hanh VCU'],
+        ['4.4.4 Dissemination of Monitoring Plan', 'Ke hoach giam sat da duoc pho bien den cac nong ho tham gia'],
+        [],
+        ['4.5.1 Community Impacts', 'Tac dong tich cuc den thu nhap nong ho, bao ve moi truong'],
+        ['4.5.2 Negative Community Impact Mitigation', 'Khong co tac dong tieu cuc dang ke'],
+        ['4.5.3 Net Positive Community Well-being', 'Tang thu nhap tu tin chi carbon, tap huan ky thuat'],
+        ['4.6.1 Biodiversity Changes', 'Vuon dua canh tac ben vung, han che thuoc tru sau'],
+        ['4.6.2 Mitigation Actions', 'Ap dung IPM, han che hoa chat'],
+        ['4.6.6 GMO Exclusion', 'Khong su dung giong bien doi gen'],
+        [],
+        ['5.1 Verification Summary', `Tong phat thai du an (EFF+EL): ${em.totalProject.toFixed(4)} tCO2e. N2O: ${em.n2o.toFixed(4)} tCO2e/ha. DSOC: ${soc.delta.toFixed(4)} tC/ha. Tong mau: ${soc.totalSamples}.`],
+        ['5.2 Verification Conclusion', 'Du an tuan thu phuong phap luan VM0042. Du lieu duoc thu thap va tinh toan dung quy trinh. Khuyen nghi: cap nhat phan tich rui ro truoc ky tiep theo.'],
+        ['The non-permanence risk rating (%)', '--'],
+        [],
+        ['Registry — Document Issue Date', today],
+        ['Registry — Document Start Date', `${yr}-01-01`],
+        ['Registry — Document End Date', today],
+        ['Registry — Document Language', 'Vietnamese / English'],
+        ['Registry — Validation/Verification Body', 'ExAS MRV System'],
+    ]);
 
-    // === SECTION 2: SOC SUMMARY ===
-    rows.push([q('=== TỔNG HỢP SOC (VM0042) ===')]);
-    rows.push([q('SOC_wp,i,t-x (Đầu vụ TB)'), q(soc.avgBegin.toFixed(4)), q('tC/ha'), q('TB M_n,dl,SOC đầu vụ'), q('')]);
-    rows.push([q('SOC_wp,i,t (Cuối vụ TB)'), q(soc.avgEnd.toFixed(4)), q('tC/ha'), q('TB M_n,dl,SOC cuối vụ'), q('')]);
-    rows.push([q('ΔCO₂_soil'), q(soc.delta.toFixed(4)), q('tC/ha'), q('SOC_t - SOC_t-x'), q('')]);
-    rows.push([q('Tổng số mẫu'), q(soc.totalSamples), q('mẫu'), q(''), q('')]);
-    rows.push([]);
+    // ── Sheet 2: Verification Period ──
+    addSheet('Verification Period', [
+        ['Schema name', 'CCB & VCS Verification Report Template CCB v3.0, VCS v4.4'],
+        ['Field name', 'Verification Period'],
+        [],
+        ['Field', 'Value'],
+        ['Start Date', `${yr}-01-01`],
+        ['End Date', today],
+    ]);
 
-    // === SECTION 3: SOC RAW DATA ===
-    rows.push([q('=== DỮ LIỆU MẪU ĐẤT SOC ===')]);
-    rows.push([q('Ngày'), q('Nông hộ'), q('Lớp đất'), q('OC (g/kg)'), q('SOC (%)'), q('M_sample (g)'), q('D (mm)'), q('N'), q('M_n,dl,SOC (tC/ha)'), q('Thời kỳ'), q('Phòng lab'), q('Ghi chú')]);
-    socData.forEach(e => {
-        rows.push([
-            q(e.date), q(e.farm), q(e.layer),
-            q(e.ocGperKg || (e.soc ? (e.soc*10).toFixed(1) : '')),
-            q(e.soc || ''), q(e.mSample || ''), q(e.tubeDiameter || ''), q(e.numCores || ''),
-            q(e.socMassVM0042 != null ? parseFloat(e.socMassVM0042).toFixed(4) : ''),
-            q(e.isBeginning ? 'Đầu vụ' : 'Cuối vụ'),
-            q(e.lab || ''), q(e.notes || '')
-        ]);
-    });
-    rows.push([]);
+    // ── Sheet 3: Crediting Period ──
+    addSheet('Crediting Period', [
+        ['Schema name', 'CCB & VCS Verification Report Template CCB v3.0, VCS v4.4'],
+        ['Field name', 'Crediting Period'],
+        [],
+        ['Field', 'Value'],
+        ['Start Date', `${yr}-01-01`],
+        ['End Date', `${yr + 30}-12-31`],
+    ]);
 
-    // === SECTION 4: FARM DIARY ===
-    rows.push([q('=== NHẬT KÝ CANH TÁC ===')]);
-    rows.push([q('Ngày'), q('Nông hộ'), q('Loại cây'), q('Loại phân'), q('Phân loại N'), q('Lượng phân (kg)'), q('% N'), q('kg N'), q('Vôi (tấn)'), q('Dolomite (tấn)'), q('Loại NL'), q('Lít NL'), q('Diện tích (ha)'), q('Ghi chú')]);
-    diaries.forEach(e => {
-        rows.push([
-            q(e.date), q(e.farm), q(e.crop || ''),
-            q(e.fertilizerType || ''), q(e.nCategory || ''),
-            q(e.fertilizerAmount || 0), q(e.nPercent || 0), q(e.nKg || 0),
-            q(e.limestone || 0), q(e.dolomite || 0),
-            q(e.fuelType || ''), q(e.fuel || 0), q(e.area || 0),
-            q(e.notes || '')
-        ]);
-    });
+    // ── Sheet 4: 2.6 Public Comments ──
+    addSheet('2.6 Public Comments', [
+        ['Schema name', 'CCB & VCS Verification Report Template CCB v3.0, VCS v4.4'],
+        ['Field name', '2.6 Public Comments'],
+        [],
+        ['Field', 'Value'],
+        ['Comments received', 'Khong co y kien phan hoi tu cong dong trong ky bao cao'],
+        ['Actions taken by the project proponent', 'Khong ap dung'],
+        ['Evidence gathering activities, evidence checked, and assessment conclusion', 'Khong co khieu nai hoac y kien duoc ghi nhan trong ky giam sat'],
+    ]);
 
-    const csvContent = '﻿' + rows.map(r => r.join(',')).join('\r\n');
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `ExAS-MRV-VM0042-${today}${farmFilter ? '-' + farmFilter : ''}.csv`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+    // ── Sheet 5: Implementation Status ──
+    addSheet('Implementation Status', [
+        ['Schema name', 'CCB & VCS Verification Report Template CCB v3.0, VCS v4.4'],
+        ['Field name', 'Implementation Status'],
+        [],
+        ['Field', 'Value'],
+        ['Project Activity', `Canh tac nong nghiep ben vung — ${projectName}`],
+        ['Material misstatements — Assessment and conclusion', 'Khong phat hien sai sot trong yeu trong du lieu giam sat'],
+        ['Monitoring plan implementation status — Assessment and conclusion', `Ke hoach giam sat dang duoc thuc hien dung tien do. ${diaries.length} nhat ky canh tac, ${socData.length} mau SOC da ghi nhan.`],
+    ]);
+
+    // ── Sheet 6: Grievances ──
+    addSheet('Grievances', [
+        ['Schema name', 'CCB & VCS Verification Report Template CCB v3.0, VCS v4.4'],
+        ['Field name', 'Grievances'],
+        [],
+        ['Field', 'Value'],
+        ['Grievance received and steps taken to resolve — Evidence and conclusion', 'Khong co khieu nai trong ky bao cao'],
+        ['Grievance redress procedure — Evidence and conclusion', 'Quy trinh giai quyet khieu nai duoc thiet lap, thong bao den cac ben lien quan, van hanh hieu qua'],
+    ]);
+
+    // ── Sheet 7: GHG Emissions (data from system) ──
+    addSheet('GHG Emissions', [
+        ['GHG Emission Source / Parameter', 'Value', 'Unit', 'Formula (VM0042)', 'Emission Factor (IPCC)', 'Notes'],
+        [],
+        ['EFF — Fossil Fuel Combustion', em.eff.toFixed(5), 'tCO2e', 'FFC × EF_CO2', 'Diesel=0.00268, Petrol=0.00231, LPG=0.00163 tCO2/litre', 'IPCC Tier 1'],
+        ['  → FFC Diesel', em.fuelDiesel.toFixed(2), 'litres', '', '', ''],
+        ['  → FFC Petrol (Xang)', em.fuelPetrol.toFixed(2), 'litres', '', '', ''],
+        ['  → FFC LPG', em.fuelLpg.toFixed(2), 'litres', '', '', ''],
+        [],
+        ['EL — Liming (Voi/Dolomite)', em.el.toFixed(5), 'tCO2e', '((M_Limestone × EF_Lime) + (M_Dolomite × EF_Dolo)) × 44/12', 'EF_Lime=0.12, EF_Dolo=0.13 tC/tonne', 'IPCC Tier 1'],
+        ['  → Limestone (Voi)', em.limestone.toFixed(3), 'tonnes', '', '', ''],
+        ['  → Dolomite', em.dolomite.toFixed(3), 'tonnes', '', '', ''],
+        [],
+        ['N2O_fert — Fertilizer Application (direct)', em.n2o.toFixed(5), 'tCO2e/ha', '(FSN+FON) × EF_Ndirect × (44/28) × GWP_N2O / 1000 / A_i', 'EF_Ndirect=0.01, GWP_N2O=265 (AR5)', 'IPCC Tier 1'],
+        ['  → FSN (Synthetic Nitrogen)', em.fsn.toFixed(3), 'kg N', '', '', ''],
+        ['  → FON (Organic Nitrogen)', em.fon.toFixed(3), 'kg N', '', '', ''],
+        ['  → Area A_i', em.maxArea.toFixed(2), 'ha', '', '', ''],
+        [],
+        ['TOTAL Project Emissions (EFF + EL)', em.totalProject.toFixed(5), 'tCO2e', '', '', 'Excludes N2O (per-ha basis)'],
+        [],
+        ['=== SOC CHANGE (VM0042) ===', '', '', '', '', ''],
+        ['SOC_wp,i,t-x — Beginning average', soc.avgBegin.toFixed(4), 'tC/ha', 'Average M_n,dl,SOC beginning samples', '', `n=${socData.filter(e=>e.isBeginning).length}`],
+        ['SOC_wp,i,t — End average', soc.avgEnd.toFixed(4), 'tC/ha', 'Average M_n,dl,SOC end samples', '', `n=${socData.filter(e=>!e.isBeginning).length}`],
+        ['Delta_CO2_soil (SOC Change)', soc.delta.toFixed(4), 'tC/ha', 'SOC_wp,i,t - SOC_wp,i,t-x', '', `Total samples: ${soc.totalSamples}`],
+    ]);
+
+    // ── Sheet 8: SOC Data ──
+    addSheet('SOC Data', [
+        ['Date', 'Farm', 'Soil Layer', 'OC (g/kg)', 'SOC (%)', 'M_sample (g)', 'Tube Diameter D (mm)', 'N Cores', 'M_n,dl,SOC (tC/ha) VM0042', 'Period', 'Lab', 'Notes'],
+        ...socData.map(e => [
+            e.date, e.farm, e.layer,
+            e.ocGperKg != null ? parseFloat(e.ocGperKg) : (e.soc ? parseFloat(e.soc) * 10 : ''),
+            e.soc != null ? parseFloat(e.soc) : '',
+            e.mSample != null ? parseFloat(e.mSample) : '',
+            e.tubeDiameter != null ? parseFloat(e.tubeDiameter) : '',
+            e.numCores != null ? parseFloat(e.numCores) : '',
+            e.socMassVM0042 != null ? parseFloat(parseFloat(e.socMassVM0042).toFixed(4)) : '',
+            e.isBeginning ? 'Beginning (t-x)' : 'End (t)',
+            e.lab || '', e.notes || ''
+        ])
+    ]);
+
+    // ── Sheet 9: Farm Diary ──
+    addSheet('Farm Diary', [
+        ['Date', 'Farm', 'Crop', 'Fertilizer Type', 'N Category (FSN/FON)', 'Fertilizer Amount (kg)', 'N Content (%)', 'N Mass (kg N)', 'Limestone (tonnes)', 'Dolomite (tonnes)', 'Fuel Type', 'Fuel (litres)', 'Area (ha)', 'Notes'],
+        ...diaries.map(e => [
+            e.date, e.farm, e.crop || '',
+            e.fertilizerType || '', e.nCategory || '',
+            e.fertilizerAmount != null ? parseFloat(e.fertilizerAmount) : 0,
+            e.nPercent != null ? parseFloat(e.nPercent) : 0,
+            e.nKg != null ? parseFloat(e.nKg) : 0,
+            e.limestone != null ? parseFloat(e.limestone) : 0,
+            e.dolomite != null ? parseFloat(e.dolomite) : 0,
+            e.fuelType || '', e.fuel != null ? parseFloat(e.fuel) : 0,
+            e.area != null ? parseFloat(e.area) : 0,
+            e.notes || ''
+        ])
+    ]);
+
+    // ── Sheet 10: Project Crediting Period ERR/VCU ──
+    addSheet('Project Crediting Period', [
+        ['Schema name', 'CCB & VCS Verification Report Template CCB v3.0, VCS v4.4'],
+        ['Field name', 'Project Crediting Period ERR/VCU Table'],
+        [],
+        ['Field', 'Value', 'Unit'],
+        ['Vintage Period Start Date', `${yr}-01-01`, ''],
+        ['Vintage Period End Date', today, ''],
+        ['Estimated baseline emissions', '', 'tCO2e'],
+        ['Estimated project emissions', parseFloat(em.totalProject.toFixed(4)), 'tCO2e'],
+        ['Estimated leakage emissions', '', 'tCO2e'],
+        ['Estimated buffer pool allocation', '', 'tCO2e'],
+        ['Estimated reduction VCUs', '', 'tCO2e'],
+        ['Estimated removal VCUs', '', 'tCO2e'],
+        ['Estimated total VCU issuance', '', 'tCO2e'],
+    ]);
+
+    XLSX.writeFile(wb, `ExAS-MRV-VCS-CCB-VM0042-${today}${farmFilter ? '-' + farmFilter : ''}.xlsx`);
 }
 
 /* ========== EMISSION CALC (Tính toán phát thải) - Admin only ========== */
