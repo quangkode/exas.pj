@@ -187,6 +187,47 @@ function renderFarmDiary(container) {
     loadDiaryData();
 }
 
+// Seed 5 lần bón phân cho Trần Minh Quang (134 kg/ha/lần × 4.6 ha, NPK 16-8-16)
+function initDefaultDiaries() {
+    const existing = JSON.parse(localStorage.getItem('mrv_diaries') || '[]');
+    if (existing.length > 0) return;
+    const area = 4.6;
+    const kgPerHa = 134;
+    const fertAmt = parseFloat((kgPerHa * area).toFixed(1)); // 616.4 kg/lần
+    const nPct = 16;
+    const nKg  = parseFloat((fertAmt * nPct / 100).toFixed(3));
+    const rounds = [
+        { date: '2024-02-10', notes: 'Bón lần 1 — đầu mùa khô, kích thích ra hoa' },
+        { date: '2024-04-15', notes: 'Bón lần 2 — trước mùa mưa' },
+        { date: '2024-06-20', notes: 'Bón lần 3 — đầu mùa mưa, hỗ trợ đậu trái' },
+        { date: '2024-08-25', notes: 'Bón lần 4 — giữa mùa mưa' },
+        { date: '2024-10-30', notes: 'Bón lần 5 — cuối mùa mưa, nuôi trái' },
+    ];
+    const defaults = rounds.map((r, i) => ({
+        id: 1700000002000 + i,
+        date: r.date,
+        farm: 'Trần Minh Quang',
+        crop: 'Dừa Lùn (PB121)',
+        area,
+        fertilizerType: 'Phân NPK (16-8-16)',
+        nCategory: 'FSN',
+        fertilizerAmount: fertAmt,
+        nPercent: nPct,
+        nKg,
+        limestone: 0,
+        dolomite: 0,
+        fuelType: '',
+        fuel: 0,
+        water: 0,
+        waste: '',
+        notes: r.notes,
+        recorder: 'Admin',
+        createdAt: r.date + 'T08:00:00.000Z'
+    }));
+    localStorage.setItem('mrv_diaries', JSON.stringify(defaults));
+}
+
+initDefaultDiaries();
 let diaryEntries = JSON.parse(localStorage.getItem('mrv_diaries') || '[]');
 
 function calcDiaryNKg() {
