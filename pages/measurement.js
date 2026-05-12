@@ -213,7 +213,7 @@ function renderSoilData(container) {
                 <div class="modal-body">
                     <!-- Hướng dẫn cột -->
                     <div style="background:var(--bg-light);border-radius:8px;padding:12px 16px;margin-bottom:16px;font-size:12px;">
-                        <div style="font-weight:600;color:var(--info);margin-bottom:6px;"><i class="fas fa-info-circle"></i> Cột cần có trong file (tên cột linh hoạt, không phân biệt hoa thường):</div>
+                        <div style="font-weight:600;color:var(--info);margin-bottom:6px;">Cột cần có trong file (tên cột linh hoạt, không phân biệt hoa thường):</div>
                         <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:6px;">
                             <span><code>Ngày</code> — ngày lấy mẫu</span>
                             <span><code>Nông hộ</code> — tên nông hộ</span>
@@ -228,16 +228,13 @@ function renderSoilData(container) {
                         </div>
                     </div>
                     <!-- Upload area -->
-                    <div id="soc-import-dropzone" onclick="document.getElementById('soc-file-input').click()"
-                        style="border:2px dashed var(--info);border-radius:10px;padding:32px;text-align:center;cursor:pointer;transition:.2s;"
-                        ondragover="event.preventDefault();this.style.background='var(--bg-light)';"
-                        ondragleave="this.style.background='';"
-                        ondrop="event.preventDefault();this.style.background='';handleSOCFileUpload(event.dataTransfer.files[0]);">
+                    <label for="soc-file-input" id="soc-import-dropzone"
+                        style="border:2px dashed var(--info);border-radius:10px;padding:32px;text-align:center;cursor:pointer;transition:.2s;display:block;">
                         <i class="fas fa-cloud-upload-alt" style="font-size:32px;color:var(--info);margin-bottom:10px;display:block;"></i>
                         <div style="font-weight:600;margin-bottom:4px;">Kéo thả file vào đây hoặc nhấn để chọn</div>
                         <div style="font-size:12px;color:var(--text-muted);">Hỗ trợ: CSV (.csv) và Excel (.xlsx, .xls)</div>
                         <input type="file" id="soc-file-input" accept=".csv,.xlsx,.xls" style="display:none;" onchange="handleSOCFileUpload(this.files[0])">
-                    </div>
+                    </label>
                     <!-- Preview table -->
                     <div id="soc-import-preview" style="display:none;margin-top:16px;">
                         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
@@ -603,6 +600,22 @@ function openSOCImportModal() {
     document.getElementById('soc-import-preview').style.display = 'none';
     document.getElementById('soc-import-confirm-btn').style.display = 'none';
     document.getElementById('soc-file-input').value = '';
+
+    const zone = document.getElementById('soc-import-dropzone');
+    if (zone._dragBound) return;
+    zone._dragBound = true;
+
+    zone.addEventListener('dragenter', e => { e.preventDefault(); e.stopPropagation(); zone.style.background = 'var(--bg-light)'; zone.style.borderColor = 'var(--success)'; });
+    zone.addEventListener('dragover',  e => { e.preventDefault(); e.stopPropagation(); zone.style.background = 'var(--bg-light)'; zone.style.borderColor = 'var(--success)'; });
+    zone.addEventListener('dragleave', e => { e.preventDefault(); e.stopPropagation(); zone.style.background = ''; zone.style.borderColor = 'var(--info)'; });
+    zone.addEventListener('drop', e => {
+        e.preventDefault();
+        e.stopPropagation();
+        zone.style.background = '';
+        zone.style.borderColor = 'var(--info)';
+        const file = e.dataTransfer.files[0];
+        if (file) handleSOCFileUpload(file);
+    });
 }
 
 function closeSOCImportModal() {
