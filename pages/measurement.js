@@ -747,19 +747,26 @@ function parseSOCCSV(text) {
     processSOCRows(aoa);
 }
 
-// Tìm dòng header thực sự (bỏ qua các dòng tiêu đề/subtitle phía trên)
+// Tìm dòng header thực sự — ưu tiên dòng có OC + M_sample, fallback dòng nhiều hits nhất
 function findHeaderRowIndex(aoa) {
-    for (let i = 0; i < Math.min(aoa.length, 10); i++) {
+    let bestIdx = 0;
+    let bestHits = 0;
+    for (let i = 0; i < Math.min(aoa.length, 15); i++) {
         const row = aoa[i];
+        if (!row || row.every(c => !c)) continue;
         const normalized = row.map(h => normalizeHeader(h + ''));
+        const hasOC = normalized.some(n => n === 'oc' || n.includes('oc g') || n.includes('organic'));
+        const hasMsample = normalized.some(n => n.includes('msample') || n.includes('m_sample') || n.includes('m sample'));
+        // Dòng có cả OC lẫn M_sample → đây chắc chắn là header
+        if (hasOC && hasMsample) return i;
         const hits = normalized.filter(n =>
-            n.includes('date') || n === 'farm' || n.includes('farm') ||
+            n.includes('date') || n.includes('farm') ||
             n === 'oc' || n.includes('msample') ||
             n.includes('period') || n.includes('layer')
         ).length;
-        if (hits >= 3) return i;
+        if (hits > bestHits) { bestHits = hits; bestIdx = i; }
     }
-    return 0;
+    return bestIdx;
 }
 
 // Xử lý số dùng dấu phẩy thập phân kiểu Việt Nam / châu Âu: "18,4" → 18.4
@@ -784,7 +791,8 @@ function processSOCRows(aoa) {
     if (map.oc === undefined) missing.push('OC (g/kg)');
     if (map.msample === undefined) missing.push('M_sample (g)');
     if (missing.length > 0) {
-        alert(`File thiếu cột bắt buộc: ${missing.join(', ')}\n\nCác cột tìm thấy: ${headers.join(', ')}\n\nHãy tải template để xem định dạng đúng.`);
+        const allCols = headers.filter(h => (h + '').trim()).join(', ');
+        alert(`File thiếu cột bắt buộc: ${missing.join(', ')}\n\nCác cột tìm thấy (dòng ${headerIdx + 1}): ${allCols}\n\nHãy tải template để xem định dạng đúng.\n\nNếu file có tên cột khác (VD: "Hàm lượng OC", "Chất hữu cơ"...), hãy đổi tiêu đề cột theo mẫu.`);
         return;
     }
 
