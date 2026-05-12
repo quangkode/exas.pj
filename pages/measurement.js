@@ -271,11 +271,11 @@ function renderSoilData(container) {
                     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
                         <div>
                             <label style="font-size:11px;color:var(--text-muted);display:block;margin-bottom:4px;">Diện tích A<sub>i</sub> (ha)</label>
-                            <input type="number" id="farm-area-input" step="0.01" value="1" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:4px;background:white;">
+                            <input type="number" id="farm-area-input" step="0.01" value="" placeholder="Tự động từ nông hộ" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:4px;background:var(--bg-light);color:var(--text-primary);">
                         </div>
                         <div>
                             <label style="font-size:11px;color:var(--text-muted);display:block;margin-bottom:4px;">Khoảng thời gian x (năm)</label>
-                            <input type="number" id="soc-x-years" step="1" value="1" min="1" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:4px;background:white;">
+                            <input type="number" id="soc-x-years" step="0.01" value="" placeholder="Tự động từ kỳ đo" min="0.1" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:4px;background:var(--bg-light);color:var(--text-primary);">
                         </div>
                     </div>
                     <button class="btn btn-secondary btn-sm" onclick="calculateSOCStats()" style="margin-top:10px;width:100%;"><i class="fas fa-redo"></i> Tính toán lại</button>
@@ -617,9 +617,19 @@ function saveSOC() {
 
 function calculateSOCStats() {
     const farmId = document.getElementById('soc-farm-filter')?.value || '';
-    if (!farmId) { alert('Vui lòng chọn nông hộ trước'); return; }
+    if (!farmId) return;
 
-    const areaHa = parseFloat(document.getElementById('farm-area-input')?.value) || 1;
+    // Tự điền diện tích từ mrv_farms nếu input chưa có giá trị thực
+    const farms = JSON.parse(localStorage.getItem('mrv_farms') || '[]');
+    const farmData = farms.find(f => f.name === farmId);
+    const areaInput = document.getElementById('farm-area-input');
+    if (areaInput && farmData && (parseFloat(areaInput.value) === 1 || !areaInput._userEdited)) {
+        areaInput.value = parseFloat(farmData.area) || 4.6;
+        areaInput._userEdited = false;
+    }
+    if (areaInput) areaInput.addEventListener('input', () => { areaInput._userEdited = true; }, { once: true });
+
+    const areaHa = parseFloat(areaInput?.value) || parseFloat(farmData?.area) || 1;
     const x = parseFloat(document.getElementById('soc-x-years')?.value) || 1;
 
     // VM0042 averages
@@ -676,8 +686,30 @@ function loadSOCData() {
         const currentValue = farmFilter.value;
         farmFilter.innerHTML = '<option value="">Tất cả nông hộ</option>' +
             farms.map(f => `<option value="${f}">${f}</option>`).join('');
-        farmFilter.value = currentValue;
+        // Auto-select: giữ lựa chọn cũ hoặc chọn farm đầu tiên
+        farmFilter.value = currentValue || (farms.length === 1 ? farms[0] : '');
+        if (!farmFilter.value && farms.length > 0) farmFilter.value = farms[0];
     }
+
+    // Tự điền x từ kỳ đo (20/03/2023 → 20/04/2024 = 1.09 năm → làm tròn 1)
+    const xInput = document.getElementById('soc-x-years');
+    if (xInput && !xInput._userEdited) {
+        // Tính x từ ngày đầu vụ và cuối vụ trong dữ liệu SOC
+        const beginDates = socEntries.filter(e => e.isBeginning && e.date).map(e => new Date(e.date));
+        const endDates   = socEntries.filter(e => !e.isBeginning && e.date).map(e => new Date(e.date));
+        if (beginDates.length && endDates.length) {
+            const minBegin = Math.min(...beginDates.map(d => d.getTime()));
+            const maxEnd   = Math.max(...endDates.map(d => d.getTime()));
+            const diffYears = (maxEnd - minBegin) / (365.25 * 24 * 3600 * 1000);
+            xInput.value = Math.max(1, parseFloat(diffYears.toFixed(2)));
+        } else {
+            xInput.value = 1;
+        }
+        xInput.addEventListener('input', () => { xInput._userEdited = true; }, { once: true });
+    }
+
+    // Auto-tính ngay khi có đủ dữ liệu
+    if (farmFilter?.value) calculateSOCStats();
 }
 
 /* ===== SOC FILE IMPORT ===== */
