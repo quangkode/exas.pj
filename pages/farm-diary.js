@@ -187,22 +187,33 @@ function renderFarmDiary(container) {
     loadDiaryData();
 }
 
-// Seed 5 lần bón phân cho Trần Minh Quang (134 kg/ha/lần × 4.6 ha, NPK 16-8-16)
+// Seed 5 lần canh tác cho Trần Minh Quang — kỳ đo 20/03/2023 – 20/04/2024
+// NPK 16-8-16: 134 kg/ha/lần × 4.6 ha = 616.4 kg | Vôi: 0.5 t/ha/năm chia 2 lần
+const DIARY_SEED_VERSION = 'v3';
 function initDefaultDiaries() {
+    if (localStorage.getItem('mrv_diaries_seed') === DIARY_SEED_VERSION) return;
+    // version mới → xóa seed cũ, nạp lại (chỉ xóa nếu toàn bộ là seed data)
     const existing = JSON.parse(localStorage.getItem('mrv_diaries') || '[]');
-    if (existing.length > 0) return; // đã có dữ liệu thật → không ghi đè
+    const isSeedOnly = existing.every(e => String(e.id).startsWith('17000000020'));
+    if (existing.length === 0 || isSeedOnly) {
+        localStorage.removeItem('mrv_diaries');
+    } else {
+        localStorage.setItem('mrv_diaries_seed', DIARY_SEED_VERSION);
+        return; // có data thật → không ghi đè
+    }
     const area = 4.6;
-    const kgPerHa = 134;
-    const fertAmt = parseFloat((kgPerHa * area).toFixed(1)); // 616.4 kg/lần
+    const fertAmt = parseFloat((134 * area).toFixed(1));   // 616.4 kg NPK/lần
     const nPct = 16;
-    const nKg  = parseFloat((fertAmt * nPct / 100).toFixed(3));
-    // Kỳ đo: 20/03/2023 – 20/04/2024 (~13 tháng, 5 lần/năm ≈ mỗi 2,5 tháng)
+    const nKg  = parseFloat((fertAmt * nPct / 100).toFixed(3)); // 98.624 kg N
+    // Vôi tổng 0.5 t/ha/năm → 2.3 t/năm, bón 2 lần (lần 1 + lần 3)
+    // Dolomite ~0.25 t/ha/năm → 1.15 t/năm, bón 1 lần (lần 2)
+    // Diesel: bơm nước + phun thuốc ~18-24 lít/lần tuỳ mùa
     const rounds = [
-        { date: '2023-04-05', notes: 'Bón lần 1 — đầu mùa khô, kích thích ra hoa (kỳ đo T1)' },
-        { date: '2023-06-18', notes: 'Bón lần 2 — đầu mùa mưa, hỗ trợ đậu trái' },
-        { date: '2023-08-30', notes: 'Bón lần 3 — giữa mùa mưa, nuôi trái' },
-        { date: '2023-11-12', notes: 'Bón lần 4 — cuối mùa mưa, chuẩn bị ra hoa vụ mới' },
-        { date: '2024-02-20', notes: 'Bón lần 5 — đầu năm mới, kích thích sinh trưởng (kỳ đo T2)' },
+        { date: '2023-04-05', limestone: 1.15, dolomite: 0,    fuelType: 'diesel', fuel: 20, notes: 'Bón lần 1 — đầu mùa khô, bón vôi chỉnh pH, kích thích ra hoa' },
+        { date: '2023-06-18', limestone: 0,    dolomite: 1.15, fuelType: 'diesel', fuel: 18, notes: 'Bón lần 2 — đầu mùa mưa, bổ sung Mg-Ca (dolomite), hỗ trợ đậu trái' },
+        { date: '2023-08-30', limestone: 1.15, dolomite: 0,    fuelType: 'diesel', fuel: 24, notes: 'Bón lần 3 — giữa mùa mưa, bón vôi lần 2, nuôi trái' },
+        { date: '2023-11-12', limestone: 0,    dolomite: 0,    fuelType: 'diesel', fuel: 20, notes: 'Bón lần 4 — cuối mùa mưa, chuẩn bị ra hoa vụ mới' },
+        { date: '2024-02-20', limestone: 0,    dolomite: 0,    fuelType: 'diesel', fuel: 16, notes: 'Bón lần 5 — đầu năm, kích thích sinh trưởng (gần cuối kỳ đo T2)' },
     ];
     const defaults = rounds.map((r, i) => ({
         id: 1700000002000 + i,
@@ -215,10 +226,10 @@ function initDefaultDiaries() {
         fertilizerAmount: fertAmt,
         nPercent: nPct,
         nKg,
-        limestone: 0,
-        dolomite: 0,
-        fuelType: '',
-        fuel: 0,
+        limestone: r.limestone,
+        dolomite:  r.dolomite,
+        fuelType:  r.fuelType,
+        fuel:      r.fuel,
         water: 0,
         waste: '',
         notes: r.notes,
@@ -226,6 +237,7 @@ function initDefaultDiaries() {
         createdAt: r.date + 'T08:00:00.000Z'
     }));
     localStorage.setItem('mrv_diaries', JSON.stringify(defaults));
+    localStorage.setItem('mrv_diaries_seed', DIARY_SEED_VERSION);
 }
 
 function forceLoadSampleDiaries() {
