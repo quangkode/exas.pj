@@ -384,11 +384,12 @@ function calculateCarbonStock(socPercent, bulkDensity, layer) {
 }
 
 // VM0042: M_{n,dl,SOC} = (M_{n,dl,sample} / (π(D/2)² × N)) × 10000 × OC_{n,dl}
-// M_sample: gam, D: mm, N: số lõi, OC: g/kg → kết quả: tC/ha
+// OC_{n,dl} trong VM0042 là phân số g/g; input từ lab là g/kg → chia 1000 trước khi nhân
 function calculateSOCMassVM0042(mSample, D, N, ocGperKg) {
     if (!mSample || !D || !N || !ocGperKg) return null;
     const tubeArea = Math.PI * Math.pow(parseFloat(D) / 2, 2); // mm²
-    const result = (parseFloat(mSample) / (tubeArea * parseFloat(N))) * 10000 * parseFloat(ocGperKg);
+    const ocFraction = parseFloat(ocGperKg) / 1000;            // g/kg → g/g
+    const result = (parseFloat(mSample) / (tubeArea * parseFloat(N))) * 10000 * ocFraction;
     return result.toFixed(4);
 }
 
@@ -625,11 +626,16 @@ function closeSOCImportModal() {
 // Chuẩn hoá tên cột
 function normalizeHeader(h) {
     return (h || '').toLowerCase().trim()
+        .replace(/[–—]/g, '-')   // em dash / en dash → hyphen
         .replace(/\s+/g, ' ')
         .replace(/[()]/g, '')
         .replace('nông hộ', 'farm')
+        .replace('ngày lấy mẫu', 'date')
         .replace('ngày', 'date')
+        .replace('thời kỳ kỳ đo', 'period')
         .replace('thời kỳ', 'period')
+        .replace('lớp đất dl cm', 'layer')
+        .replace('lớp đất dl', 'layer')
         .replace('lớp đất', 'layer')
         .replace('oc g/kg', 'oc')
         .replace('m_sample g', 'msample')
@@ -638,12 +644,10 @@ function normalizeHeader(h) {
         .replace('msample g', 'msample')
         .replace('đường kính', 'd')
         .replace('d mm', 'd')
+        .replace('n lõi', 'n')
         .replace('số lõi', 'n')
         .replace('phòng lab', 'lab')
-        .replace('ghi chú', 'notes')
-        .replace('notes', 'notes')
-        .replace('farm', 'farm')
-        .replace('date', 'date');
+        .replace('ghi chú', 'notes');
 }
 
 function mapHeader(headers) {
@@ -664,28 +668,44 @@ function mapHeader(headers) {
     return map;
 }
 
+function parseVNDate(raw) {
+    const s = (raw + '').trim();
+    // DD/MM/YYYY hoặc DD-MM-YYYY
+    const m = s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
+    if (m) return `${m[3]}-${m[2].padStart(2,'0')}-${m[1].padStart(2,'0')}`;
+    // YYYY-MM-DD giữ nguyên
+    if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
+    return s || new Date().toISOString().slice(0,10);
+}
+
 function parseRowToSOC(row, map) {
     const get = (key, def = '') => {
         const idx = map[key];
         return idx !== undefined ? (row[idx] ?? def) : def;
     };
 
-    const date = get('date') || new Date().toISOString().slice(0, 10);
-    const farm = get('farm', 'Chưa xác định');
-    const periodRaw = (get('period', 'cuoi vu') + '').toLowerCase();
-    const isBeginning = periodRaw.includes('đầu') || periodRaw.includes('dau') || periodRaw.includes('begin') || periodRaw.includes('start') || periodRaw === 't-x';
-    const layer = get('layer', '0-15cm') || '0-15cm';
+    const date = parseVNDate(get('date') || '');
+    const farm = (get('farm', 'Chưa xác định') + '').trim() || 'Chưa xác định';
+    const periodRaw = (get('period', '') + '').toLowerCase();
+    // Nhận diện: "Kỳ 1 (Đầu vụ)", "Đầu vụ", "beginning", "ky 1", "t-x"
+    const isBeginning = periodRaw.includes('đầu') || periodRaw.includes('dau') ||
+        periodRaw.includes('begin') || periodRaw.includes('start') ||
+        periodRaw === 't-x' || /kỳ\s*1/.test(periodRaw) || /ky\s*1/.test(periodRaw);
+    const layer = (get('layer', '0-20') + '').trim() || '0-20';
     const ocGperKg = parseFloat(get('oc', 0)) || 0;
-    const mSample = parseFloat(get('msample', 0)) || 0;
-    const D = parseFloat(get('d', 52)) || 52;
-    const N = parseInt(get('n', 1)) || 1;
-    const lab = get('lab', '');
-    const notes = get('notes', '');
+    const mSample  = parseFloat(get('msample', 0)) || 0;
+    const D        = parseFloat(get('d', 52)) || 52;
+    const N        = parseInt(get('n', 1)) || 1;
+    const lab      = get('lab', '');
+    const notes    = get('notes', '');
 
     const socMassVM0042 = calculateSOCMassVM0042(mSample, D, N, ocGperKg);
     const soc = ocGperKg ? (ocGperKg / 10) : 0;
 
-    return { date, farm, layer, ocGperKg, soc, mSample, tubeDiameter: D, numCores: N, lab, notes, isBeginning, socMassVM0042: socMassVM0042 ? parseFloat(socMassVM0042) : null, ok: !!(ocGperKg && mSample) };
+    return { date, farm, layer, ocGperKg, soc, mSample, tubeDiameter: D, numCores: N,
+             lab, notes, isBeginning,
+             socMassVM0042: socMassVM0042 ? parseFloat(socMassVM0042) : null,
+             ok: !!(ocGperKg && mSample) };
 }
 
 function handleSOCFileUpload(file) {
@@ -814,12 +834,15 @@ function confirmSOCImport() {
 }
 
 function downloadSOCTemplate() {
-    const header = ['Ngày', 'Nông hộ', 'Thời kỳ', 'Lớp đất', 'OC (g/kg)', 'M_sample (g)', 'D (mm)', 'N', 'Phòng lab', 'Ghi chú'];
+    // Đúng theo mẫu phòng lab Việt Nam (ảnh tham chiếu)
+    const header = ['Ngày lấy mẫu', 'Nông hộ', 'Thời kỳ (Kỳ đo)', 'Lớp đất dl (cm)', 'OC (g/kg)', 'M_sample (g)', 'D (mm)', 'N (lõi)', 'Ghi chú'];
     const examples = [
-        ['2025-01-15', 'Hộ Nguyễn Văn A', 'Đầu vụ', '0-15cm', '18.5', '250', '52', '3', 'Lab Đại học Cần Thơ', 'Lấy mẫu đầu vụ'],
-        ['2025-01-15', 'Hộ Nguyễn Văn A', 'Đầu vụ', '15-30cm', '12.3', '220', '52', '3', 'Lab Đại học Cần Thơ', ''],
-        ['2025-06-20', 'Hộ Nguyễn Văn A', 'Cuối vụ', '0-15cm', '21.0', '255', '52', '3', 'Lab Đại học Cần Thơ', 'Lấy mẫu cuối vụ'],
-        ['2025-01-15', 'Hộ Trần Thị B', 'Đầu vụ', '0-15cm', '15.8', '240', '52', '3', '', ''],
+        ['15/03/2023', 'Trần Minh Quang', 'Kỳ 1 (Đầu vụ)', '0-20', '18.4', '312.5', '70', '5', 'Lấy mẫu đại diện 5 điểm trên 1 ha'],
+        ['15/03/2023', 'Trần Minh Quang', 'Kỳ 1 (Đầu vụ)', '20-40', '12.1', '298.7', '70', '5', 'Mẫu tổ hợp, sấy khô 105°C/24h'],
+        ['15/03/2023', 'Trần Minh Quang', 'Kỳ 1 (Đầu vụ)', '40-60', '7.8',  '285.3', '70', '5', 'Phương pháp Walkley-Black'],
+        ['20/03/2024', 'Trần Minh Quang', 'Kỳ 2 (Cuối vụ)', '0-20', '21.6', '318.2', '70', '5', 'Lấy mẫu đại diện 5 điểm trên 1 ha'],
+        ['20/03/2024', 'Trần Minh Quang', 'Kỳ 2 (Cuối vụ)', '20-40', '13.9', '301.4', '70', '5', 'Mẫu tổ hợp, sấy khô 105°C/24h'],
+        ['20/03/2024', 'Trần Minh Quang', 'Kỳ 2 (Cuối vụ)', '40-60', '8.5',  '289.1', '70', '5', 'Phương pháp Walkley-Black'],
     ];
     const q = v => `"${(v + '').replace(/"/g, '""')}"`;
     const csv = '﻿' + [header, ...examples].map(r => r.map(q).join(',')).join('\r\n');
@@ -827,7 +850,7 @@ function downloadSOCTemplate() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = 'SOC_Template_VM0042.csv';
+    a.download = 'SOC_DuLieuXetNghiemDat_Template.csv';
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
