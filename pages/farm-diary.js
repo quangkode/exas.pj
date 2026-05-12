@@ -190,18 +190,19 @@ function renderFarmDiary(container) {
 // Seed 5 lần bón phân cho Trần Minh Quang (134 kg/ha/lần × 4.6 ha, NPK 16-8-16)
 function initDefaultDiaries() {
     const existing = JSON.parse(localStorage.getItem('mrv_diaries') || '[]');
-    if (existing.length > 0) return;
+    if (existing.length > 0) return; // đã có dữ liệu thật → không ghi đè
     const area = 4.6;
     const kgPerHa = 134;
     const fertAmt = parseFloat((kgPerHa * area).toFixed(1)); // 616.4 kg/lần
     const nPct = 16;
     const nKg  = parseFloat((fertAmt * nPct / 100).toFixed(3));
+    // Kỳ đo: 20/03/2023 – 20/04/2024 (~13 tháng, 5 lần/năm ≈ mỗi 2,5 tháng)
     const rounds = [
-        { date: '2024-02-10', notes: 'Bón lần 1 — đầu mùa khô, kích thích ra hoa' },
-        { date: '2024-04-15', notes: 'Bón lần 2 — trước mùa mưa' },
-        { date: '2024-06-20', notes: 'Bón lần 3 — đầu mùa mưa, hỗ trợ đậu trái' },
-        { date: '2024-08-25', notes: 'Bón lần 4 — giữa mùa mưa' },
-        { date: '2024-10-30', notes: 'Bón lần 5 — cuối mùa mưa, nuôi trái' },
+        { date: '2023-04-05', notes: 'Bón lần 1 — đầu mùa khô, kích thích ra hoa (kỳ đo T1)' },
+        { date: '2023-06-18', notes: 'Bón lần 2 — đầu mùa mưa, hỗ trợ đậu trái' },
+        { date: '2023-08-30', notes: 'Bón lần 3 — giữa mùa mưa, nuôi trái' },
+        { date: '2023-11-12', notes: 'Bón lần 4 — cuối mùa mưa, chuẩn bị ra hoa vụ mới' },
+        { date: '2024-02-20', notes: 'Bón lần 5 — đầu năm mới, kích thích sinh trưởng (kỳ đo T2)' },
     ];
     const defaults = rounds.map((r, i) => ({
         id: 1700000002000 + i,
@@ -225,6 +226,13 @@ function initDefaultDiaries() {
         createdAt: r.date + 'T08:00:00.000Z'
     }));
     localStorage.setItem('mrv_diaries', JSON.stringify(defaults));
+}
+
+function forceLoadSampleDiaries() {
+    localStorage.removeItem('mrv_diaries');
+    initDefaultDiaries();
+    diaryEntries = JSON.parse(localStorage.getItem('mrv_diaries') || '[]');
+    loadDiaryData();
 }
 
 initDefaultDiaries();
@@ -302,7 +310,13 @@ function loadDiaryData() {
     const tbody = document.getElementById('diary-table-body');
     if (!tbody) return;
     if (diaryEntries.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="12"><div class="empty-state"><i class="fas fa-book-open"></i><p>Chưa có nhật ký canh tác</p></div></td></tr>';
+        tbody.innerHTML = `<tr><td colspan="12"><div class="empty-state">
+            <i class="fas fa-book-open"></i>
+            <p>Chưa có nhật ký canh tác</p>
+            <button class="btn btn-secondary" style="margin-top:12px;" onclick="forceLoadSampleDiaries()">
+                <i class="fas fa-database"></i> Nạp dữ liệu mẫu
+            </button>
+        </div></td></tr>`;
         return;
     }
     tbody.innerHTML = diaryEntries.map(e => {
