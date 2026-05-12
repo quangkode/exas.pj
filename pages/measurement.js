@@ -63,7 +63,7 @@ function renderDroneData(container) {
     container.innerHTML = `
         <div class="page-header">
             <h1 class="page-title">Dữ liệu Drone & LiDAR</h1>
-            <p class="page-desc">Đo đạc diện tích vùng trồng và tính toán sinh khối bằng Drone LiDAR</p>
+            <p class="page-desc">Đo đạc diện tích vùng trồng bằng Drone & LiDAR</p>
         </div>
         <div class="stats-grid">
             <div class="stat-card">
@@ -77,12 +77,6 @@ function renderDroneData(container) {
                 <div class="stat-icon blue"><i class="fas fa-ruler-combined"></i></div>
                 <div class="stat-value">-- ha</div>
                 <div class="stat-label">Diện tích đã đo</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-glow orange"></div>
-                <div class="stat-icon orange"><i class="fas fa-tree"></i></div>
-                <div class="stat-value">-- tấn</div>
-                <div class="stat-label">Sinh khối ước tính</div>
             </div>
         </div>
         <div class="card">
@@ -101,9 +95,9 @@ function renderDroneData(container) {
             </div>
             <div class="table-wrapper">
                 <table class="data-table">
-                    <thead><tr><th>Ngày bay</th><th>Nông hộ</th><th>Diện tích (ha)</th><th>Sinh khối (tấn)</th><th>File</th><th>Trạng thái</th></tr></thead>
+                    <thead><tr><th>Ngày bay</th><th>Nông hộ</th><th>Diện tích (ha)</th><th>File</th><th>Trạng thái</th></tr></thead>
                     <tbody>
-                        <tr><td colspan="6"><div class="empty-state"><i class="fas fa-helicopter"></i><p>Chưa có dữ liệu bay khảo sát</p></div></td></tr>
+                        <tr><td colspan="5"><div class="empty-state"><i class="fas fa-helicopter"></i><p>Chưa có dữ liệu bay khảo sát</p></div></td></tr>
                     </tbody>
                 </table>
             </div>
