@@ -59,7 +59,81 @@ function renderIoTData(container) {
 }
 
 /* ========== DRONE / LIDAR DATA PAGE ========== */
+
+const DRONE_SEED_VERSION = 'v1';
+function initDefaultDroneData() {
+    if (localStorage.getItem('mrv_drone_seed') === DRONE_SEED_VERSION) return;
+    const existing = JSON.parse(localStorage.getItem('mrv_drone') || '[]');
+    const isSeedOnly = existing.every(e => String(e.id).startsWith('17000000030'));
+    if (existing.length > 0 && !isSeedOnly) {
+        localStorage.setItem('mrv_drone_seed', DRONE_SEED_VERSION);
+        return;
+    }
+    const defaults = [
+        {
+            id: 1700000003001,
+            date: '2023-03-22',
+            farm: 'Trần Minh Quang',
+            area: 4.61,
+            pilot: 'Kỹ thuật viên Nguyễn Văn Tài',
+            drone: 'DJI Phantom 4 RTK',
+            gsd: '3.2 cm/px',
+            altitude: '80m AGL',
+            overlap: '80/75%',
+            fileNames: 'orthomosaic_20230322_NH001.tif, pointcloud_20230322_NH001.laz',
+            fileSize: '2.14 GB',
+            notes: 'Bay đầu kỳ đo — xác định ranh giới vườn, diện tích thực 4.61 ha',
+            status: 'processed',
+            createdAt: '2023-03-22T07:30:00.000Z'
+        },
+        {
+            id: 1700000003002,
+            date: '2024-04-12',
+            farm: 'Trần Minh Quang',
+            area: 4.60,
+            pilot: 'Kỹ thuật viên Nguyễn Văn Tài',
+            drone: 'DJI Phantom 4 RTK',
+            gsd: '3.1 cm/px',
+            altitude: '80m AGL',
+            overlap: '80/75%',
+            fileNames: 'orthomosaic_20240412_NH001.tif, pointcloud_20240412_NH001.laz',
+            fileSize: '2.08 GB',
+            notes: 'Bay cuối kỳ đo — kiểm tra biến động diện tích, không thay đổi đáng kể',
+            status: 'processed',
+            createdAt: '2024-04-12T07:15:00.000Z'
+        }
+    ];
+    localStorage.setItem('mrv_drone', JSON.stringify(defaults));
+    localStorage.setItem('mrv_drone_seed', DRONE_SEED_VERSION);
+}
+
 function renderDroneData(container) {
+    initDefaultDroneData();
+    const entries = JSON.parse(localStorage.getItem('mrv_drone') || '[]');
+    const totalArea = entries.length ? Math.max(...entries.map(e => e.area)) : 0;
+
+    const statusBadge = s => s === 'processed'
+        ? '<span class="badge badge-green">Đã xử lý</span>'
+        : '<span class="badge badge-orange">Đang xử lý</span>';
+
+    const rows = entries.length === 0
+        ? '<tr><td colspan="7"><div class="empty-state"><i class="fas fa-helicopter"></i><p>Chưa có dữ liệu bay khảo sát</p></div></td></tr>'
+        : entries.map(e => `<tr>
+            <td>${e.date}</td>
+            <td><strong>${e.farm}</strong></td>
+            <td><strong style="color:var(--primary-light);">${e.area} ha</strong></td>
+            <td style="font-size:11px;">
+                <div>${e.drone}</div>
+                <div style="color:var(--text-muted);">GSD: ${e.gsd} | ${e.altitude} | Overlap: ${e.overlap}</div>
+            </td>
+            <td style="font-size:11px;">
+                <div style="color:var(--text-secondary);">${e.fileNames}</div>
+                <div style="color:var(--text-muted);">${e.fileSize}</div>
+            </td>
+            <td>${statusBadge(e.status)}</td>
+            <td><button class="btn-icon" onclick="deleteDroneEntry(${e.id})" title="Xóa" style="color:var(--danger);"><i class="fas fa-trash"></i></button></td>
+        </tr>`).join('');
+
     container.innerHTML = `
         <div class="page-header">
             <h1 class="page-title">Dữ liệu Drone & LiDAR</h1>
@@ -69,14 +143,20 @@ function renderDroneData(container) {
             <div class="stat-card">
                 <div class="stat-glow green"></div>
                 <div class="stat-icon green"><i class="fas fa-helicopter"></i></div>
-                <div class="stat-value">--</div>
+                <div class="stat-value">${entries.length}</div>
                 <div class="stat-label">Lần bay khảo sát</div>
             </div>
             <div class="stat-card">
                 <div class="stat-glow blue"></div>
                 <div class="stat-icon blue"><i class="fas fa-ruler-combined"></i></div>
-                <div class="stat-value">-- ha</div>
+                <div class="stat-value">${totalArea > 0 ? totalArea.toFixed(2) + ' ha' : '-- ha'}</div>
                 <div class="stat-label">Diện tích đã đo</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-glow orange"></div>
+                <div class="stat-icon orange"><i class="fas fa-check-circle"></i></div>
+                <div class="stat-value">${entries.filter(e => e.status === 'processed').length}</div>
+                <div class="stat-label">Đã xử lý</div>
             </div>
         </div>
         <div class="card">
@@ -95,14 +175,23 @@ function renderDroneData(container) {
             </div>
             <div class="table-wrapper">
                 <table class="data-table">
-                    <thead><tr><th>Ngày bay</th><th>Nông hộ</th><th>Diện tích (ha)</th><th>File</th><th>Trạng thái</th></tr></thead>
-                    <tbody>
-                        <tr><td colspan="5"><div class="empty-state"><i class="fas fa-helicopter"></i><p>Chưa có dữ liệu bay khảo sát</p></div></td></tr>
-                    </tbody>
+                    <thead><tr>
+                        <th>Ngày bay</th><th>Nông hộ</th><th>Diện tích (ha)</th>
+                        <th>Thông số bay</th><th>File</th><th>Trạng thái</th><th></th>
+                    </tr></thead>
+                    <tbody>${rows}</tbody>
                 </table>
             </div>
         </div>
     `;
+}
+
+function deleteDroneEntry(id) {
+    if (!confirm('Xác nhận xóa bản ghi bay này?')) return;
+    let entries = JSON.parse(localStorage.getItem('mrv_drone') || '[]');
+    entries = entries.filter(e => e.id !== id);
+    localStorage.setItem('mrv_drone', JSON.stringify(entries));
+    renderDroneData(document.getElementById('page-content'));
 }
 
 /* ========== SOIL DATA (SOC) PAGE ========== */
