@@ -292,6 +292,45 @@ function renderSoilData(container) {
                 </table>
             </div>
         </div>
+
+        <!-- Quản lý tàn dư sinh khối -->
+        <div class="card" style="margin-top:20px;">
+            <div class="card-header">
+                <div class="card-title"><i class="fas fa-leaf" style="color:var(--success);"></i> Quản lý tàn dư sinh khối</div>
+            </div>
+            <div class="table-wrapper">
+                <table class="data-table" style="font-size:12px;">
+                    <thead><tr>
+                        <th>Ngày / Nông hộ</th>
+                        <th>Thời kỳ</th>
+                        <th>N (mg/kg)</th>
+                        <th>P (mg/kg)</th>
+                        <th>K (mg/kg)</th>
+                        <th>Fulvic (g/kg)</th>
+                        <th>Humic (g/kg)</th>
+                        <th>Humin (g/kg)</th>
+                        <th>Sét (%)</th>
+                        <th>Cation</th>
+                        <th>Trơ (%)</th>
+                        <th>VSV (×10⁶)</th>
+                    </tr></thead>
+                    <tbody id="biomass-table-body">
+                        <tr><td colspan="12"><div class="empty-state" style="padding:20px;"><i class="fas fa-leaf"></i><p>Chưa có dữ liệu tàn dư sinh khối</p></div></td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Phân tích mối quan hệ biện chứng -->
+        <div class="card" style="margin-top:20px;" id="dialectical-analysis-card">
+            <div class="card-header">
+                <div class="card-title"><i class="fas fa-project-diagram" style="color:var(--warning);"></i> Phân tích mối quan hệ biện chứng 3 biến số</div>
+                <button class="btn btn-secondary btn-sm" onclick="runDialecticalAnalysis()"><i class="fas fa-sync"></i> Cập nhật</button>
+            </div>
+            <div id="dialectical-analysis-body" style="padding:20px;">
+                <div class="empty-state" style="padding:24px;"><i class="fas fa-project-diagram" style="font-size:28px;opacity:.3;display:block;margin-bottom:8px;"></i><p>Nhấn "Cập nhật" để phân tích mối liên hệ giữa Tàn dư sinh khối — SOC — Phát thải phân bón</p></div>
+            </div>
+        </div>
         <!-- Modal Import -->
         <div class="modal-overlay" id="soc-import-modal">
             <div class="modal" style="max-width:860px;">
@@ -314,6 +353,19 @@ function renderSoilData(container) {
                             <span><code>N</code> — số lõi</span>
                             <span><code>Phòng lab</code> — tuỳ chọn</span>
                             <span><code>Ghi chú</code> — tuỳ chọn</span>
+                        </div>
+                        <div style="margin-top:8px;font-weight:600;color:var(--success);margin-bottom:4px;">Cột tàn dư sinh khối (tuỳ chọn):</div>
+                        <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:6px;">
+                            <span><code>Chất Nitơ</code> — N (mg/kg)</span>
+                            <span><code>Phốtpho</code> — P (mg/kg)</span>
+                            <span><code>Kali</code> — K (mg/kg)</span>
+                            <span><code>Axit Fulvic</code> — (g/kg)</span>
+                            <span><code>Axit Humic</code> — (g/kg)</span>
+                            <span><code>Humin</code> — (g/kg)</span>
+                            <span><code>Keo sét</code> — (%)</span>
+                            <span><code>Cation kim loại</code> — cmol(+)/kg</span>
+                            <span><code>Hạt vô cơ trơ</code> — (%)</span>
+                            <span><code>Vi sinh vật</code> — CFU/g đất</span>
                         </div>
                     </div>
                     <!-- Upload area -->
@@ -427,6 +479,34 @@ function renderSoilData(container) {
                             <div class="form-group"><label>Phòng Lab</label><input type="text" id="soc-lab" placeholder="Tên phòng phân tích"></div>
                         </div>
                         <div class="form-group"><label>Ghi chú</label><textarea id="soc-notes" placeholder="Ghi chú..."></textarea></div>
+                        <!-- Tàn dư sinh khối -->
+                        <div style="margin-top:14px;">
+                            <div onclick="toggleBiomassSection()" style="display:flex;align-items:center;gap:8px;cursor:pointer;padding:10px 14px;background:rgba(16,185,129,0.07);border-radius:6px;border:1px solid rgba(16,185,129,0.25);">
+                                <i class="fas fa-leaf" style="color:var(--success);"></i>
+                                <span style="font-size:13px;font-weight:600;color:var(--success);">Tàn dư sinh khối &amp; vi sinh (từ phòng lab)</span>
+                                <i class="fas fa-chevron-down" id="biomass-chevron" style="margin-left:auto;font-size:11px;color:var(--text-muted);transition:.2s;"></i>
+                            </div>
+                            <div id="biomass-fields" style="display:none;padding:14px;background:var(--bg-light);border:1px solid rgba(16,185,129,0.2);border-top:none;border-radius:0 0 6px 6px;">
+                                <div class="form-row">
+                                    <div class="form-group"><label>Chất Nitơ — N (mg/kg)</label><input type="number" id="soc-nitrogen" step="0.1" placeholder="mg/kg"></div>
+                                    <div class="form-group"><label>Phốtpho — P (mg/kg)</label><input type="number" id="soc-phosphorus" step="0.1" placeholder="mg/kg"></div>
+                                    <div class="form-group"><label>Kali — K (mg/kg)</label><input type="number" id="soc-potassium" step="0.1" placeholder="mg/kg"></div>
+                                </div>
+                                <div class="form-row">
+                                    <div class="form-group"><label>Axit Fulvic (g/kg)</label><input type="number" id="soc-fulvic" step="0.01" placeholder="g/kg"></div>
+                                    <div class="form-group"><label>Axit Humic (g/kg)</label><input type="number" id="soc-humic" step="0.01" placeholder="g/kg"></div>
+                                    <div class="form-group"><label>Humin (g/kg)</label><input type="number" id="soc-humin" step="0.01" placeholder="g/kg"></div>
+                                </div>
+                                <div class="form-row">
+                                    <div class="form-group"><label>Keo sét (%)</label><input type="number" id="soc-clay" step="0.1" placeholder="%" min="0" max="100"></div>
+                                    <div class="form-group"><label>Cation kim loại (cmol(+)/kg)</label><input type="number" id="soc-cation" step="0.01" placeholder="cmol(+)/kg"></div>
+                                    <div class="form-group"><label>Hạt vô cơ trơ (%)</label><input type="number" id="soc-inert" step="0.1" placeholder="%" min="0" max="100"></div>
+                                </div>
+                                <div class="form-row">
+                                    <div class="form-group" style="max-width:50%;"><label>Vi sinh vật — VSV (CFU/g đất)</label><input type="number" id="soc-vsv" step="10000" placeholder="VD: 5000000"></div>
+                                </div>
+                            </div>
+                        </div>
                     </form>
                 </div>
                 <div class="modal-footer">
@@ -563,9 +643,22 @@ function openSOCModal() {
     document.getElementById('soc-form').reset();
     document.getElementById('soc-mass-vm0042').value = '';
     document.getElementById('soc-carbon-stock').value = '';
+    // Reset biomass section
+    const bf = document.getElementById('biomass-fields');
+    const bc = document.getElementById('biomass-chevron');
+    if (bf) bf.style.display = 'none';
+    if (bc) bc.className = 'fas fa-chevron-down';
     // Default tube diameter
     const dField = document.getElementById('soc-tube-d');
-    if (dField && !dField.value) dField.value = 52;
+    if (dField) dField.value = 52;
+    // Populate farm select from mrv_farms
+    const farmSel = document.getElementById('soc-farm');
+    if (farmSel) {
+        const farms = JSON.parse(localStorage.getItem('mrv_farms') || '[]');
+        farmSel.innerHTML = '<option value="">Chọn nông hộ</option>' +
+            farms.map(f => `<option value="${f.name}">${f.name}</option>`).join('');
+        if (farms.length === 1) farmSel.value = farms[0].name;
+    }
 }
 
 function closeSOCModal() {
@@ -603,7 +696,17 @@ function saveSOC() {
         lab: document.getElementById('soc-lab').value,
         notes: document.getElementById('soc-notes').value,
         recorder: currentUser.name,
-        isBeginning: period === 'beginning'
+        isBeginning: period === 'beginning',
+        nitrogen:   parseFloat(document.getElementById('soc-nitrogen')?.value) || null,
+        phosphorus: parseFloat(document.getElementById('soc-phosphorus')?.value) || null,
+        potassium:  parseFloat(document.getElementById('soc-potassium')?.value) || null,
+        fulvic:     parseFloat(document.getElementById('soc-fulvic')?.value) || null,
+        humic:      parseFloat(document.getElementById('soc-humic')?.value) || null,
+        humin:      parseFloat(document.getElementById('soc-humin')?.value) || null,
+        clay:       parseFloat(document.getElementById('soc-clay')?.value) || null,
+        cation:     parseFloat(document.getElementById('soc-cation')?.value) || null,
+        inert:      parseFloat(document.getElementById('soc-inert')?.value) || null,
+        vsv:        parseFloat(document.getElementById('soc-vsv')?.value) || null,
     };
     socEntries.push(entry);
     localStorage.setItem('mrv_soc', JSON.stringify(socEntries));
@@ -710,6 +813,9 @@ function loadSOCData() {
 
     // Auto-tính ngay khi có đủ dữ liệu
     if (farmFilter?.value) calculateSOCStats();
+
+    renderBiomassSection();
+    if (socEntries.length > 0) setTimeout(runDialecticalAnalysis, 200);
 }
 
 /* ===== SOC FILE IMPORT ===== */
@@ -768,7 +874,19 @@ function normalizeHeader(h) {
         .replace('n lõi', 'n')
         .replace('số lõi', 'n')
         .replace('phòng lab', 'lab')
-        .replace('ghi chú', 'notes');
+        .replace('ghi chú', 'notes')
+        .replace('chất nitơ', 'nitrogen').replace('nitơ tổng số', 'nitrogen')
+        .replace('nitơ', 'nitrogen').replace('đạm tổng số', 'nitrogen')
+        .replace('phốtpho tổng số', 'phosphorus').replace('phốtpho', 'phosphorus')
+        .replace('lân tổng số', 'phosphorus')
+        .replace('kali tổng số', 'potassium').replace('kali', 'potassium')
+        .replace('axit fulvic', 'fulvic').replace('acid fulvic', 'fulvic')
+        .replace('axit humic', 'humic').replace('acid humic', 'humic')
+        .replace('axit humin', 'humin').replace('acid humin', 'humin')
+        .replace('keo sét', 'clay').replace('hàm lượng sét', 'clay')
+        .replace('cation kim loại', 'cation').replace('cec', 'cation')
+        .replace('hạt vô cơ trơ', 'inert').replace('vô cơ trơ', 'inert')
+        .replace('vi sinh vật', 'vsv').replace('vi sinh', 'vsv');
 }
 
 function mapHeader(headers) {
@@ -785,6 +903,16 @@ function mapHeader(headers) {
         else if (n === 'n' || n.includes('cores') || n.includes('lõi') || n.includes('loi')) map.n = i;
         else if (n.includes('lab') || n.includes('phòng')) map.lab = i;
         else if (n.includes('notes') || n.includes('ghi chú') || n.includes('ghi chu')) map.notes = i;
+        else if (n === 'nitrogen' || n.includes('nitrogen') || n.includes('nitơ') || n.includes('nito') || n.includes('đạm')) map.nitrogen = i;
+        else if (n === 'phosphorus' || n.includes('phosphorus') || n.includes('photpho') || n.includes('phốtpho') || n.includes('lân')) map.phosphorus = i;
+        else if (n === 'potassium' || n.includes('potassium') || n.includes('kali')) map.potassium = i;
+        else if (n === 'fulvic' || n.includes('fulvic')) map.fulvic = i;
+        else if (n === 'humin' || n.includes('humin')) map.humin = i;
+        else if (n === 'humic' || (n.includes('humic') && !n.includes('humin'))) map.humic = i;
+        else if (n === 'clay' || n.includes('clay') || n.includes('keo sét') || n.includes('keo set') || n.includes('sét')) map.clay = i;
+        else if (n === 'cation' || n.includes('cation') || n.includes('cec')) map.cation = i;
+        else if (n === 'inert' || n.includes('inert') || n.includes('vô cơ trơ') || n.includes('vo co tro')) map.inert = i;
+        else if (n === 'vsv' || n.includes('vsv') || n.includes('vi sinh') || n.includes('cfu') || n.includes('microb')) map.vsv = i;
     });
     return map;
 }
@@ -823,9 +951,13 @@ function parseRowToSOC(row, map) {
     const socMassVM0042 = calculateSOCMassVM0042(mSample, D, N, ocGperKg);
     const soc = ocGperKg ? (ocGperKg / 10) : 0;
 
+    const pf = k => { const v = parseLocaleFloat(get(k, '')); return v || null; };
     return { date, farm, layer, ocGperKg, soc, mSample, tubeDiameter: D, numCores: N,
              lab, notes, isBeginning,
              socMassVM0042: socMassVM0042 ? parseFloat(socMassVM0042) : null,
+             nitrogen: pf('nitrogen'), phosphorus: pf('phosphorus'), potassium: pf('potassium'),
+             fulvic: pf('fulvic'), humic: pf('humic'), humin: pf('humin'),
+             clay: pf('clay'), cation: pf('cation'), inert: pf('inert'), vsv: pf('vsv'),
              ok: !!(ocGperKg && mSample) };
 }
 
@@ -977,7 +1109,10 @@ function confirmSOCImport() {
         notes: r.notes,
         isBeginning: r.isBeginning,
         recorder: currentUser?.name || 'Import',
-        createdAt: now
+        createdAt: now,
+        nitrogen: r.nitrogen, phosphorus: r.phosphorus, potassium: r.potassium,
+        fulvic: r.fulvic, humic: r.humic, humin: r.humin,
+        clay: r.clay, cation: r.cation, inert: r.inert, vsv: r.vsv,
     }));
 
     socEntries.push(...newEntries);
@@ -992,18 +1127,27 @@ function downloadSOCTemplate() {
 
     const data = [
         // Dòng tiêu đề
-        ['Ngày lấy mẫu', 'Nông hộ', 'Thời kỳ (Kỳ đo)', 'Lớp đất dl (cm)', 'OC (g/kg)', 'M_sample (g)', 'D (mm)', 'N (lõi)', 'Ghi chú'],
+        ['Ngày lấy mẫu', 'Nông hộ', 'Thời kỳ (Kỳ đo)', 'Lớp đất dl (cm)', 'OC (g/kg)', 'M_sample (g)', 'D (mm)', 'N (lõi)', 'Ghi chú',
+         'Chất Nitơ (mg/kg)', 'Phốtpho (mg/kg)', 'Kali (mg/kg)',
+         'Axit Fulvic (g/kg)', 'Axit Humic (g/kg)', 'Humin (g/kg)',
+         'Keo sét (%)', 'Cation kim loại (cmol(+)/kg)', 'Hạt vô cơ trơ (%)', 'Vi sinh vật (CFU/g đất)'],
         // Dữ liệu mẫu — Kỳ 1 (Đầu vụ)
-        ['15/03/2023', 'Trần Minh Quang', 'Kỳ 1 (Đầu vụ)', '0-20',  18.4, 312.5, 70, 5, 'Lấy mẫu đại diện 5 điểm trên 1 ha'],
-        ['15/03/2023', 'Trần Minh Quang', 'Kỳ 1 (Đầu vụ)', '20-40', 12.1, 298.7, 70, 5, 'Mẫu tổ hợp, sấy khô 105°C/24h'],
-        ['15/03/2023', 'Trần Minh Quang', 'Kỳ 1 (Đầu vụ)', '40-60',  7.8, 285.3, 70, 5, 'Phương pháp Walkley-Black'],
+        ['15/03/2023', 'Trần Minh Quang', 'Kỳ 1 (Đầu vụ)', '0-20',  18.4, 312.5, 70, 5, 'Lấy mẫu đại diện 5 điểm trên 1 ha',
+         1120, 38.5, 210, 1.2, 8.5, 4.1, 28.4, 8.2, 22.1, 3200000],
+        ['15/03/2023', 'Trần Minh Quang', 'Kỳ 1 (Đầu vụ)', '20-40', 12.1, 298.7, 70, 5, 'Mẫu tổ hợp, sấy khô 105°C/24h',
+         980, 31.2, 185, 0.8, 6.2, 3.3, 30.1, 7.4, 24.8, 2100000],
+        ['15/03/2023', 'Trần Minh Quang', 'Kỳ 1 (Đầu vụ)', '40-60',  7.8, 285.3, 70, 5, 'Phương pháp Walkley-Black',
+         750, 24.1, 155, 0.5, 4.1, 2.5, 32.0, 6.1, 27.3, 1400000],
         // Dữ liệu mẫu — Kỳ 2 (Cuối vụ)
-        ['20/03/2024', 'Trần Minh Quang', 'Kỳ 2 (Cuối vụ)', '0-20',  21.6, 318.2, 70, 5, 'Lấy mẫu đại diện 5 điểm trên 1 ha'],
-        ['20/03/2024', 'Trần Minh Quang', 'Kỳ 2 (Cuối vụ)', '20-40', 13.9, 301.4, 70, 5, 'Mẫu tổ hợp, sấy khô 105°C/24h'],
-        ['20/03/2024', 'Trần Minh Quang', 'Kỳ 2 (Cuối vụ)', '40-60',  8.5, 289.1, 70, 5, 'Phương pháp Walkley-Black'],
+        ['20/03/2024', 'Trần Minh Quang', 'Kỳ 2 (Cuối vụ)', '0-20',  21.6, 318.2, 70, 5, 'Lấy mẫu đại diện 5 điểm trên 1 ha',
+         1380, 45.2, 248, 1.7, 11.4, 5.3, 27.2, 9.8, 20.5, 5800000],
+        ['20/03/2024', 'Trần Minh Quang', 'Kỳ 2 (Cuối vụ)', '20-40', 13.9, 301.4, 70, 5, 'Mẫu tổ hợp, sấy khô 105°C/24h',
+         1150, 37.8, 220, 1.1, 8.8, 4.4, 29.5, 8.6, 22.9, 3900000],
+        ['20/03/2024', 'Trần Minh Quang', 'Kỳ 2 (Cuối vụ)', '40-60',  8.5, 289.1, 70, 5, 'Phương pháp Walkley-Black',
+         880, 28.4, 190, 0.7, 5.5, 3.0, 31.4, 6.9, 25.8, 2200000],
         // Dòng trống + hướng dẫn
         [],
-        ['--- HƯỚNG DẪN ---', '', '', '', '', '', '', '', ''],
+        ['--- HƯỚNG DẪN ---'],
         ['Ngày lấy mẫu', 'Định dạng DD/MM/YYYY hoặc YYYY-MM-DD'],
         ['Thời kỳ (Kỳ đo)', 'Kỳ 1 (Đầu vụ) = mẫu đầu kỳ  |  Kỳ 2 (Cuối vụ) = mẫu cuối kỳ'],
         ['Lớp đất dl (cm)', 'VD: 0-20, 20-40, 40-60'],
@@ -1011,24 +1155,256 @@ function downloadSOCTemplate() {
         ['M_sample (g)', 'Khối lượng mẫu đất trong ống lấy mẫu (gram)'],
         ['D (mm)', 'Đường kính trong ống lấy mẫu (mm) — thường 52 hoặc 70'],
         ['N (lõi)', 'Số lõi đất lấy mẫu trên mỗi điểm'],
+        ['Tàn dư sinh khối', 'Tất cả cột từ "Chất Nitơ" trở đi đều là tuỳ chọn — có thể để trống'],
+        ['Vi sinh vật (CFU/g)', 'Nhập số nguyên, VD: 5000000 (= 5×10⁶ CFU/g đất)'],
     ];
 
     const ws = XLSX.utils.aoa_to_sheet(data);
 
     // Độ rộng cột
     ws['!cols'] = [
-        { wch: 16 }, // Ngày
-        { wch: 22 }, // Nông hộ
-        { wch: 20 }, // Thời kỳ
-        { wch: 16 }, // Lớp đất
-        { wch: 12 }, // OC
-        { wch: 14 }, // M_sample
-        { wch: 10 }, // D
-        { wch: 10 }, // N
-        { wch: 45 }, // Ghi chú
+        { wch: 16 }, { wch: 22 }, { wch: 20 }, { wch: 16 },
+        { wch: 12 }, { wch: 14 }, { wch: 10 }, { wch: 10 }, { wch: 38 },
+        { wch: 20 }, { wch: 18 }, { wch: 14 },
+        { wch: 18 }, { wch: 18 }, { wch: 14 },
+        { wch: 14 }, { wch: 25 }, { wch: 20 }, { wch: 24 },
     ];
 
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'DuLieu_SOC_VM0042');
     XLSX.writeFile(wb, 'SOC_DuLieuXetNghiemDat_Template.xlsx');
+}
+
+// ===== BIOMASS SECTION HELPERS =====
+
+function toggleBiomassSection() {
+    const fields = document.getElementById('biomass-fields');
+    const chevron = document.getElementById('biomass-chevron');
+    if (!fields) return;
+    const open = fields.style.display !== 'none';
+    fields.style.display = open ? 'none' : 'block';
+    if (chevron) chevron.className = open ? 'fas fa-chevron-down' : 'fas fa-chevron-up';
+}
+
+function renderBiomassSection() {
+    const tbody = document.getElementById('biomass-table-body');
+    if (!tbody) return;
+    const hasBiomass = socEntries.filter(e =>
+        e.nitrogen || e.phosphorus || e.potassium || e.fulvic || e.humic || e.humin || e.clay || e.cation || e.inert || e.vsv
+    );
+    if (hasBiomass.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="12"><div class="empty-state" style="padding:20px;"><i class="fas fa-leaf"></i><p>Chưa có dữ liệu tàn dư sinh khối. Nhập dữ liệu qua form hoặc file CSV/Excel.</p></div></td></tr>';
+        return;
+    }
+    const fmt = (v, dec = 1) => v != null ? parseFloat(v).toFixed(dec) : '<span style="color:var(--text-muted);">--</span>';
+    const fmtVSV = v => v != null ? (v / 1e6).toFixed(2) : '<span style="color:var(--text-muted);">--</span>';
+    tbody.innerHTML = hasBiomass.map(e => `<tr>
+        <td><strong>${e.farm}</strong><div style="font-size:10px;color:var(--text-muted);">${e.date} | ${e.layer}</div></td>
+        <td>${e.isBeginning ? '<span class="badge badge-blue">Đầu vụ</span>' : '<span class="badge badge-green">Cuối vụ</span>'}</td>
+        <td>${fmt(e.nitrogen)}</td>
+        <td>${fmt(e.phosphorus)}</td>
+        <td>${fmt(e.potassium)}</td>
+        <td>${fmt(e.fulvic, 2)}</td>
+        <td>${fmt(e.humic, 2)}</td>
+        <td>${fmt(e.humin, 2)}</td>
+        <td>${fmt(e.clay)}</td>
+        <td>${fmt(e.cation, 2)}</td>
+        <td>${fmt(e.inert)}</td>
+        <td>${fmtVSV(e.vsv)}</td>
+    </tr>`).join('');
+}
+
+// ===== DIALECTICAL ANALYSIS (Yêu cầu 2) =====
+
+function computeBiomassScore(entry) {
+    const scores = [];
+    if (entry.nitrogen)   scores.push(Math.min(100, (entry.nitrogen / 1500) * 100));
+    if (entry.phosphorus) scores.push(Math.min(100, (entry.phosphorus / 60) * 100));
+    if (entry.potassium)  scores.push(Math.min(100, (entry.potassium / 300) * 100));
+    if (entry.fulvic)     scores.push(Math.min(100, (entry.fulvic / 2.5) * 100));
+    if (entry.humic)      scores.push(Math.min(100, (entry.humic / 15) * 100));
+    if (entry.humin)      scores.push(Math.min(100, (entry.humin / 8) * 100));
+    if (entry.clay) {
+        const c = entry.clay;
+        if (c >= 20 && c <= 45) scores.push(100);
+        else if (c < 20) scores.push((c / 20) * 100);
+        else scores.push(Math.max(0, 100 - (c - 45) * 3));
+    }
+    if (entry.cation) scores.push(Math.min(100, (entry.cation / 12) * 100));
+    if (entry.inert != null) scores.push(Math.max(0, 100 - entry.inert * 2));
+    if (entry.vsv)  scores.push(Math.min(100, (Math.log10(Math.max(entry.vsv, 1)) / 7) * 100));
+    return scores.length > 0 ? scores.reduce((s, v) => s + v, 0) / scores.length : null;
+}
+
+function runDialecticalAnalysis() {
+    const body = document.getElementById('dialectical-analysis-body');
+    if (!body) return;
+
+    const farms   = JSON.parse(localStorage.getItem('mrv_farms')   || '[]');
+    const diaries = JSON.parse(localStorage.getItem('mrv_diaries') || '[]');
+    const soc     = JSON.parse(localStorage.getItem('mrv_soc')     || '[]');
+
+    if (!soc.length && !diaries.length) {
+        body.innerHTML = '<div class="empty-state" style="padding:24px;"><i class="fas fa-info-circle"></i><p>Cần có dữ liệu SOC và nhật ký canh tác để phân tích.</p></div>';
+        return;
+    }
+
+    // --- Variable 1: Biomass score ---
+    const endEntries = soc.filter(e => !e.isBeginning);
+    const beginEntries = soc.filter(e => e.isBeginning);
+    let biomassScore = null;
+    let latestBiomass = null;
+    if (endEntries.length > 0) {
+        const entriesWithBio = endEntries.filter(e => e.nitrogen || e.fulvic || e.humic || e.vsv || e.clay);
+        if (entriesWithBio.length > 0) {
+            latestBiomass = entriesWithBio[entriesWithBio.length - 1];
+            biomassScore = computeBiomassScore(latestBiomass);
+        }
+    }
+
+    // --- Variable 2: SOC delta ---
+    const avgBeginSOC = beginEntries.filter(e => e.socMassVM0042).length > 0
+        ? beginEntries.filter(e => e.socMassVM0042).reduce((s, e) => s + parseFloat(e.socMassVM0042), 0) / beginEntries.filter(e => e.socMassVM0042).length
+        : 0;
+    const avgEndSOC = endEntries.filter(e => e.socMassVM0042).length > 0
+        ? endEntries.filter(e => e.socMassVM0042).reduce((s, e) => s + parseFloat(e.socMassVM0042), 0) / endEntries.filter(e => e.socMassVM0042).length
+        : 0;
+    const deltaSOC = avgEndSOC - avgBeginSOC;
+
+    // --- Variable 3: Fertilizer carbon emissions ---
+    const totalArea = farms.reduce((s, f) => s + (parseFloat(f.area) || 0), 0) || 4.6;
+    const totalN    = diaries.reduce((s, d) => s + (parseFloat(d.nKg) || 0), 0);
+    const totalLimestoneT = diaries.reduce((s, d) => s + (parseFloat(d.limestone) || 0), 0);
+    const totalDolomiteT  = diaries.reduce((s, d) => s + (parseFloat(d.dolomite)  || 0), 0);
+    // N2O: FSN × EF1(0.01) × (44/28) × GWP265 / 1000 → tCO₂e
+    const n2oEmissions   = (totalN * 0.01 * (44 / 28) * 265) / 1000;
+    // CO2 từ vôi & dolomit: CaCO3 → 0.44 tCO2/t; MgCO3 → 0.52 tCO2/t
+    const co2Limestone   = totalLimestoneT * 0.44;
+    const co2Dolomite    = totalDolomiteT  * 0.52;
+    const totalEmissions = n2oEmissions + co2Limestone + co2Dolomite;
+    const nPerHa         = totalN / totalArea;
+    const emissionsPerHa = totalEmissions / totalArea;
+
+    // --- Thresholds (dừa Bến Tre, VM0042) ---
+    const N_LOW  = 85;   // kg N/ha/năm
+    const N_HIGH = 175;  // kg N/ha/năm
+    const EMI_HIGH = 0.75; // tCO₂e/ha/năm
+    const BIO_LOW  = 38;
+    const BIO_HIGH = 62;
+
+    // --- Scenario determination ---
+    let scenario;
+    if (biomassScore !== null) {
+        if (nPerHa < N_LOW && deltaSOC <= 0.001 && biomassScore < BIO_HIGH)          scenario = 'TH1';
+        else if (nPerHa > N_HIGH && emissionsPerHa > EMI_HIGH && biomassScore < BIO_HIGH) scenario = 'TH2';
+        else if (emissionsPerHa > EMI_HIGH * 0.7 && deltaSOC < 0.005 && biomassScore < BIO_HIGH) scenario = 'TH3';
+        else scenario = 'OK';
+    } else {
+        if (nPerHa < N_LOW && deltaSOC <= 0)    scenario = 'TH1';
+        else if (nPerHa > N_HIGH || emissionsPerHa > EMI_HIGH) scenario = 'TH2';
+        else scenario = 'OK';
+    }
+
+    // --- Build HTML ---
+    const bioScoreBar = biomassScore != null
+        ? `<div style="display:flex;align-items:center;gap:8px;">
+            <div style="flex:1;background:var(--border);border-radius:4px;height:8px;overflow:hidden;">
+                <div style="width:${biomassScore.toFixed(0)}%;height:100%;background:${biomassScore>65?'var(--success)':biomassScore>40?'var(--warning)':'var(--danger)'};transition:.5s;"></div>
+            </div>
+            <span style="font-size:12px;font-weight:600;min-width:36px;">${biomassScore.toFixed(0)}%</span>
+           </div>`
+        : '<span style="color:var(--text-muted);font-size:12px;">Chưa có dữ liệu sinh khối</span>';
+
+    const socColor = deltaSOC > 0.001 ? 'var(--success)' : deltaSOC < -0.001 ? 'var(--danger)' : 'var(--warning)';
+    const emiColor = emissionsPerHa > EMI_HIGH ? 'var(--danger)' : emissionsPerHa > EMI_HIGH * 0.7 ? 'var(--warning)' : 'var(--success)';
+
+    const metricCards = `
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px;">
+        <div style="padding:14px;background:var(--bg-light);border-radius:8px;border-left:3px solid ${biomassScore != null ? (biomassScore > 65 ? 'var(--success)' : biomassScore > 40 ? 'var(--warning)' : 'var(--danger)') : 'var(--border)'};">
+            <div style="font-size:11px;color:var(--text-muted);margin-bottom:6px;"><i class="fas fa-leaf"></i> Chỉ số sinh khối tàn dư</div>
+            ${bioScoreBar}
+            <div style="font-size:10px;color:var(--text-muted);margin-top:4px;">${biomassScore != null ? (biomassScore > 65 ? 'Tốt — hệ sinh thái ổn định' : biomassScore > 40 ? 'Trung bình — cần cải thiện' : 'Thấp — cần can thiệp') : 'Thêm dữ liệu sinh khối vào mẫu SOC'}</div>
+        </div>
+        <div style="padding:14px;background:var(--bg-light);border-radius:8px;border-left:3px solid ${socColor};">
+            <div style="font-size:11px;color:var(--text-muted);margin-bottom:4px;"><i class="fas fa-layer-group"></i> ΔSOC (VM0042)</div>
+            <div style="font-size:18px;font-weight:700;color:${socColor};">${avgEndSOC > 0 ? (deltaSOC >= 0 ? '+' : '') + deltaSOC.toFixed(4) : '--'} <span style="font-size:11px;">tC/ha</span></div>
+            <div style="font-size:10px;color:var(--text-muted);margin-top:2px;">${deltaSOC > 0.001 ? 'Hấp thụ carbon' : deltaSOC < -0.001 ? 'Mất carbon' : 'Ổn định'}</div>
+        </div>
+        <div style="padding:14px;background:var(--bg-light);border-radius:8px;border-left:3px solid ${emiColor};">
+            <div style="font-size:11px;color:var(--text-muted);margin-bottom:4px;"><i class="fas fa-smog"></i> Phát thải phân bón</div>
+            <div style="font-size:18px;font-weight:700;color:${emiColor};">${emissionsPerHa.toFixed(3)} <span style="font-size:11px;">tCO₂e/ha</span></div>
+            <div style="font-size:10px;color:var(--text-muted);margin-top:2px;">N₂O: ${n2oEmissions.toFixed(3)} t + Vôi: ${(co2Limestone+co2Dolomite).toFixed(3)} t</div>
+        </div>
+    </div>`;
+
+    const scenarios = {
+        TH1: {
+            color: 'var(--warning)', icon: 'fa-arrow-up', badge: 'TH1 — Vườn chưa đủ dinh dưỡng',
+            title: 'Tăng bón để phục hồi sinh khối và SOC',
+            points: [
+                `<strong>N-P-K:</strong> Tăng từ ${nPerHa.toFixed(0)} lên ${N_LOW + 20}–${N_LOW + 40} kg N/ha/năm. Ưu tiên bón ${Math.round((N_LOW+30 - nPerHa) * totalArea)} kg N chia 3–4 đợt.`,
+                `<strong>Dự báo sinh khối:</strong> Bổ sung phân hữu cơ vi sinh (2–3 t/ha) giúp Humic tăng 15–25%, VSV tăng 2–4 lần.`,
+                `<strong>SOC:</strong> Dự kiến tăng +0.003–0.008 tC/ha/năm khi bón đúng cách và giữ tàn dư thực vật.`,
+                `<strong>Phát thải:</strong> CO₂ đầu vào tăng nhẹ, nhưng sinh khối hấp thụ bù lại — net carbon có thể dương.`,
+            ]
+        },
+        TH2: {
+            color: 'var(--danger)', icon: 'fa-arrow-down', badge: 'TH2 — Bón phân vô cơ quá mức',
+            title: 'Giảm phân vô cơ để cắt phát thải & bảo vệ vi sinh vật',
+            points: [
+                `<strong>Giảm N vô cơ:</strong> Từ ${nPerHa.toFixed(0)} kg N/ha xuống còn ${N_HIGH - 20}–${N_HIGH} kg N/ha — tiết kiệm ${Math.round((nPerHa - N_HIGH + 10) * totalArea)} kg N/năm.`,
+                `<strong>N₂O:</strong> Cắt giảm N vô cơ ${Math.round(nPerHa - N_HIGH + 10)} kg/ha → giảm N₂O ${((nPerHa - N_HIGH + 10) * totalArea * 0.01 * (44/28) * 265 / 1000).toFixed(3)} tCO₂e.`,
+                `<strong>Bảo vệ VSV & Humic/Fulvic:</strong> Phân vô cơ cao làm pH giảm, phá huỷ vi sinh. Giảm bón giúp pH hồi phục, VSV tăng lại.`,
+                `<strong>SOC ổn định:</strong> Khi VSV & Humic/Fulvic được bảo vệ, SOC hiện tại được giữ nguyên — không mất thêm.`,
+            ]
+        },
+        TH3: {
+            color: 'var(--info)', icon: 'fa-recycle', badge: 'TH3 — Chuyển đổi sang canh tác hữu cơ',
+            title: 'Giảm dần phân vô cơ, tăng Humic/Fulvic/VSV để xây dựng lại SOC',
+            points: [
+                `<strong>Lộ trình 2 năm:</strong> Giảm 30% N-P-K vô cơ năm 1, thêm 1.5 t/ha phân hữu cơ vi sinh. Năm 2: giảm thêm 20%, tăng Fulvic lỏng (5–10 L/ha/năm).`,
+                `<strong>Axit Humic/Fulvic:</strong> Bổ sung 3–5 kg Humic + 1–2 L Fulvic/ha/vụ. Keo hoá đất, giảm rửa trôi SOC.`,
+                `<strong>VSV đất:</strong> Chủng Trichoderma, Azotobacter vào đầu mùa mưa — tăng VSV từ ${latestBiomass?.vsv ? (latestBiomass.vsv / 1e6).toFixed(1) : '~2'}×10⁶ lên mục tiêu 8–10×10⁶ CFU/g.`,
+                `<strong>Carbon ceiling:</strong> Phát thải giảm từ ${emissionsPerHa.toFixed(3)} xuống < ${(EMI_HIGH * 0.5).toFixed(2)} tCO₂e/ha/năm. SOC tăng tích luỹ 0.005–0.012 tC/ha/năm.`,
+            ]
+        },
+        OK: {
+            color: 'var(--success)', icon: 'fa-check-circle', badge: 'Trạng thái tốt — tiếp tục duy trì',
+            title: 'Hệ thống đang vận hành cân bằng',
+            points: [
+                `Phân bón ở mức hợp lý (${nPerHa.toFixed(0)} kg N/ha), phát thải kiểm soát được.`,
+                deltaSOC > 0 ? `SOC đang tăng (+${deltaSOC.toFixed(4)} tC/ha) — tiếp tục duy trì phương thức canh tác hiện tại.` : `SOC ổn định — duy trì bón hữu cơ để cải thiện thêm.`,
+                `Khuyến nghị: duy trì bón vôi 0.5 t/ha/năm để giữ pH 5.5–6.5, bảo vệ VSV.`,
+                `<span style="cursor:pointer;color:var(--primary-light);text-decoration:underline;" onclick="navigateTo('farm-recommend')">Xem đề xuất canh tác chi tiết →</span>`,
+            ]
+        }
+    };
+
+    const sc = scenarios[scenario];
+    const alertBg = { 'var(--warning)': 'rgba(245,158,11,0.08)', 'var(--danger)': 'rgba(239,68,68,0.08)', 'var(--info)': 'rgba(59,130,246,0.08)', 'var(--success)': 'rgba(16,185,129,0.08)' };
+    const bg = alertBg[sc.color] || 'var(--bg-light)';
+
+    const scenarioHTML = `
+    <div style="background:${bg};border:1px solid ${sc.color};border-radius:10px;padding:16px 20px;">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
+            <div style="width:36px;height:36px;border-radius:50%;background:${sc.color};display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                <i class="fas ${sc.icon}" style="color:#fff;font-size:16px;"></i>
+            </div>
+            <div>
+                <span style="font-size:11px;font-weight:700;color:${sc.color};text-transform:uppercase;letter-spacing:.5px;">${sc.badge}</span>
+                <div style="font-size:14px;font-weight:600;margin-top:2px;">${sc.title}</div>
+            </div>
+            ${scenario !== 'OK' ? `<button class="btn btn-primary btn-sm" style="margin-left:auto;background:${sc.color};border-color:${sc.color};" onclick="navigateTo('farm-recommend')"><i class="fas fa-clipboard-list"></i> Đề xuất canh tác</button>` : ''}
+        </div>
+        <ul style="list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:8px;">
+            ${sc.points.map(p => `<li style="display:flex;gap:8px;font-size:13px;"><i class="fas fa-arrow-right" style="color:${sc.color};margin-top:3px;flex-shrink:0;font-size:10px;"></i><span>${p}</span></li>`).join('')}
+        </ul>
+    </div>`;
+
+    const infoNote = `<div style="font-size:11px;color:var(--text-muted);margin-top:12px;padding:8px 12px;background:var(--bg-light);border-radius:6px;">
+        <i class="fas fa-info-circle"></i> Phân tích dựa trên: N bón = ${totalN.toFixed(0)} kg (${nPerHa.toFixed(0)} kg/ha) | ΔSOC = ${deltaSOC.toFixed(4)} tC/ha | Phát thải = ${totalEmissions.toFixed(3)} tCO₂e | Diện tích = ${totalArea.toFixed(2)} ha
+        ${biomassScore != null ? ` | Chỉ số sinh khối = ${biomassScore.toFixed(0)}/100` : ' | Chỉ số sinh khối: chưa có (nhập dữ liệu tàn dư vào mẫu SOC)'}
+    </div>`;
+
+    body.innerHTML = metricCards + scenarioHTML + infoNote;
 }
