@@ -778,22 +778,27 @@ function renderEmissionCalc(container) {
 
         <!-- Bộ lọc -->
         <div class="card" style="margin-bottom:20px;">
-            <div style="padding:16px;display:flex;gap:16px;flex-wrap:wrap;align-items:flex-end;">
-                <div>
-                    <label style="font-size:12px;color:var(--text-muted);display:block;margin-bottom:4px;">Nông hộ</label>
-                    <select id="ec-farm-filter" style="padding:8px 12px;border:1px solid var(--border);border-radius:4px;min-width:180px;">
-                        <option value="">Tất cả nông hộ</option>
-                    </select>
+            <div style="padding:16px;">
+                <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;">
+                    <div style="flex:1;min-width:180px;">
+                        <label style="font-size:12px;color:var(--text-muted);display:block;margin-bottom:4px;"><i class="fas fa-seedling" style="color:var(--success);"></i> Nông hộ</label>
+                        <select id="ec-farm-filter" onchange="autoFillEmissionFields()" style="width:100%;padding:8px 12px;border:1px solid var(--border);border-radius:4px;">
+                            <option value="">Tất cả nông hộ</option>
+                        </select>
+                    </div>
+                    <div style="flex:1;min-width:140px;">
+                        <label style="font-size:12px;color:var(--text-muted);display:block;margin-bottom:4px;">Từ ngày</label>
+                        <input type="date" id="ec-date-from" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:4px;">
+                    </div>
+                    <div style="flex:1;min-width:140px;">
+                        <label style="font-size:12px;color:var(--text-muted);display:block;margin-bottom:4px;">Đến ngày</label>
+                        <input type="date" id="ec-date-to" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:4px;">
+                    </div>
+                    <button class="btn btn-primary" onclick="autoFillEmissionFields()" style="min-width:160px;"><i class="fas fa-sync-alt"></i> Tải dữ liệu & Tính</button>
                 </div>
-                <div>
-                    <label style="font-size:12px;color:var(--text-muted);display:block;margin-bottom:4px;">Từ ngày</label>
-                    <input type="date" id="ec-date-from" style="padding:8px;border:1px solid var(--border);border-radius:4px;">
+                <div id="ec-data-info" style="margin-top:10px;font-size:12px;padding:8px 12px;background:var(--bg-light);border-radius:6px;color:var(--text-muted);">
+                    <i class="fas fa-info-circle"></i> Chọn nông hộ để tự động tải dữ liệu từ nhật ký canh tác
                 </div>
-                <div>
-                    <label style="font-size:12px;color:var(--text-muted);display:block;margin-bottom:4px;">Đến ngày</label>
-                    <input type="date" id="ec-date-to" style="padding:8px;border:1px solid var(--border);border-radius:4px;">
-                </div>
-                <button class="btn btn-primary" onclick="runEmissionCalc()"><i class="fas fa-sync-alt"></i> Tải dữ liệu & Tính</button>
             </div>
         </div>
 
@@ -929,10 +934,10 @@ function renderEmissionCalc(container) {
         </div>
 
         <!-- Tổng hợp -->
-        <div class="card">
+        <div class="card" style="margin-bottom:20px;">
             <div class="card-header"><div class="card-title"><i class="fas fa-sigma"></i> Tổng hợp phát thải dự án</div></div>
             <div style="padding:20px;">
-                <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:16px;">
+                <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;">
                     <div style="background:var(--bg-light);padding:16px;border-radius:8px;border-top:3px solid var(--danger);text-align:center;">
                         <div style="font-size:11px;color:var(--text-muted);margin-bottom:6px;">EFF — Nhiên liệu</div>
                         <div style="font-size:20px;font-weight:bold;color:var(--danger);" id="sum-eff">--</div>
@@ -956,26 +961,93 @@ function renderEmissionCalc(container) {
                 </div>
             </div>
         </div>
+
+        <!-- Bảng chi tiết nhật ký đã dùng -->
+        <div class="card">
+            <div class="card-header">
+                <div class="card-title"><i class="fas fa-list-alt" style="color:var(--info);"></i> Dữ liệu nhật ký canh tác đã tính</div>
+                <span id="ec-diary-count" style="font-size:12px;color:var(--text-muted);"></span>
+            </div>
+            <div class="table-wrapper">
+                <table class="data-table" style="font-size:12px;">
+                    <thead><tr>
+                        <th>Ngày</th><th>Nông hộ</th><th>Phân bón (loại)</th>
+                        <th>N (kg)</th><th>Loại N</th>
+                        <th>Vôi (t)</th><th>Dolomit (t)</th>
+                        <th>Nhiên liệu</th><th>Ghi chú</th>
+                    </tr></thead>
+                    <tbody id="ec-diary-table-body">
+                        <tr><td colspan="9"><div class="empty-state" style="padding:16px;"><i class="fas fa-book"></i><p>Chưa có dữ liệu</p></div></td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
     `;
 
     setTimeout(() => {
         populateEmissionFarmFilter();
-        const now = new Date();
-        const fromEl = document.getElementById('ec-date-from');
-        const toEl = document.getElementById('ec-date-to');
-        if (fromEl) fromEl.value = `${now.getFullYear()}-01-01`;
-        if (toEl) toEl.value = now.toISOString().slice(0, 10);
-        runEmissionCalc();
+        autoFillEmissionFields();
     }, 100);
 }
 
 function populateEmissionFarmFilter() {
+    const farms   = JSON.parse(localStorage.getItem('mrv_farms')   || '[]');
     const diaries = JSON.parse(localStorage.getItem('mrv_diaries') || '[]');
-    const farms = [...new Set(diaries.map(e => e.farm))].filter(Boolean);
+    const diaryFarmSet = new Set(diaries.map(e => e.farm).filter(Boolean));
+
     const select = document.getElementById('ec-farm-filter');
     if (!select) return;
-    select.innerHTML = '<option value="">Tất cả nông hộ</option>' +
-        farms.map(f => `<option value="${f}">${f}</option>`).join('');
+
+    // Build options: registered farms first (with code), then any unregistered diary farms
+    const registeredNames = new Set(farms.map(f => f.name));
+    const extraNames = [...diaryFarmSet].filter(n => !registeredNames.has(n));
+
+    select.innerHTML =
+        '<option value="">Tất cả nông hộ</option>' +
+        farms.map(f => {
+            const hasDiary = diaryFarmSet.has(f.name);
+            return `<option value="${f.name}" ${hasDiary ? '' : 'style="color:var(--text-muted)"'}>[${f.code}] ${f.name}</option>`;
+        }).join('') +
+        extraNames.map(n => `<option value="${n}">${n}</option>`).join('');
+
+    // Auto-select first farm that has diary data
+    const first = farms.find(f => diaryFarmSet.has(f.name));
+    if (first) select.value = first.name;
+
+    select.addEventListener('change', autoFillEmissionFields);
+}
+
+function autoFillEmissionFields() {
+    const farmName = document.getElementById('ec-farm-filter')?.value || '';
+
+    // Auto-fill area from mrv_farms
+    const farms   = JSON.parse(localStorage.getItem('mrv_farms')   || '[]');
+    const diaries = JSON.parse(localStorage.getItem('mrv_diaries') || '[]');
+
+    const farmObj = farms.find(f => f.name === farmName);
+    const areaEl  = document.getElementById('ec-area');
+    if (areaEl && farmObj) {
+        areaEl.value = parseFloat(farmObj.area) || '';
+    }
+
+    // Auto-fill date range from diary dates for this farm
+    const filtered = farmName ? diaries.filter(e => e.farm === farmName) : diaries;
+    const dates = filtered.map(e => e.date).filter(Boolean).sort();
+    if (dates.length) {
+        const fromEl = document.getElementById('ec-date-from');
+        const toEl   = document.getElementById('ec-date-to');
+        if (fromEl) fromEl.value = dates[0];
+        if (toEl)   toEl.value   = dates[dates.length - 1];
+    } else {
+        // Fallback to current year
+        const now = new Date();
+        const fromEl = document.getElementById('ec-date-from');
+        const toEl   = document.getElementById('ec-date-to');
+        if (fromEl) fromEl.value = `${now.getFullYear()}-01-01`;
+        if (toEl)   toEl.value   = now.toISOString().slice(0, 10);
+    }
+
+    runEmissionCalc();
 }
 
 function getFilteredDiaries() {
@@ -992,39 +1064,86 @@ function getFilteredDiaries() {
 }
 
 function runEmissionCalc() {
-    const diaries = getFilteredDiaries();
+    const diaries  = getFilteredDiaries();
+    const farmName = document.getElementById('ec-farm-filter')?.value || '';
+    const farms    = JSON.parse(localStorage.getItem('mrv_farms') || '[]');
+    const farmObj  = farms.find(f => f.name === farmName);
 
     let fuelDiesel = 0, fuelPetrol = 0, fuelLpg = 0;
     let limestone = 0, dolomite = 0;
     let fsn = 0, fon = 0;
-    let maxArea = 0;
 
     diaries.forEach(e => {
-        if (e.fuelType === 'diesel') fuelDiesel += parseFloat(e.fuel) || 0;
-        else if (e.fuelType === 'petrol') fuelPetrol += parseFloat(e.fuel) || 0;
-        else if (e.fuelType === 'lpg') fuelLpg += parseFloat(e.fuel) || 0;
+        const fuel = parseFloat(e.fuel) || 0;
+        if      (e.fuelType === 'diesel') fuelDiesel += fuel;
+        else if (e.fuelType === 'petrol') fuelPetrol += fuel;
+        else if (e.fuelType === 'lpg')   fuelLpg    += fuel;
         limestone += parseFloat(e.limestone) || 0;
-        dolomite += parseFloat(e.dolomite) || 0;
-        if (e.nCategory === 'FSN') fsn += parseFloat(e.nKg) || 0;
-        if (e.nCategory === 'FON') fon += parseFloat(e.nKg) || 0;
-        if ((parseFloat(e.area) || 0) > maxArea) maxArea = parseFloat(e.area);
+        dolomite  += parseFloat(e.dolomite)  || 0;
+        const n = parseFloat(e.nKg) || 0;
+        if (e.nCategory === 'FON') fon += n;
+        else fsn += n; // FSN is default — synthetic N if no category set
     });
 
     const set = (id, val) => { const el = document.getElementById(id); if (el) el.value = val; };
-    set('ec-ffc-diesel', fuelDiesel.toFixed(2) + ' lít');
-    set('ec-ffc-petrol', fuelPetrol.toFixed(2) + ' lít');
-    set('ec-ffc-lpg', fuelLpg.toFixed(2) + ' lít');
-    set('ec-m-limestone', limestone.toFixed(3) + ' tấn');
-    set('ec-m-dolomite', dolomite.toFixed(3) + ' tấn');
-    set('ec-fsn', fsn.toFixed(3) + ' kg N');
-    set('ec-fon', fon.toFixed(3) + ' kg N');
+    set('ec-ffc-diesel',  fuelDiesel.toFixed(2) + ' lít');
+    set('ec-ffc-petrol',  fuelPetrol.toFixed(2) + ' lít');
+    set('ec-ffc-lpg',     fuelLpg.toFixed(2)    + ' lít');
+    set('ec-m-limestone', limestone.toFixed(3)   + ' tấn');
+    set('ec-m-dolomite',  dolomite.toFixed(3)    + ' tấn');
+    set('ec-fsn',         fsn.toFixed(3) + ' kg N');
+    set('ec-fon',         fon.toFixed(3) + ' kg N');
 
+    // Auto-fill area from mrv_farms (takes priority over diary entries)
     const areaEl = document.getElementById('ec-area');
-    if (areaEl && !areaEl.value && maxArea > 0) areaEl.value = maxArea;
+    if (areaEl) {
+        const farmArea = parseFloat(farmObj?.area);
+        if (farmArea > 0) areaEl.value = farmArea;
+        else if (!areaEl.value) areaEl.value = 1;
+    }
+
+    // Show data source info
+    const infoEl = document.getElementById('ec-data-info');
+    if (infoEl) {
+        if (diaries.length > 0) {
+            const farmLabel = farmObj ? `[${farmObj.code}] ${farmObj.name}` : (farmName || 'Tất cả nông hộ');
+            infoEl.innerHTML = `<i class="fas fa-check-circle" style="color:var(--success);"></i> Đã tải <strong>${diaries.length}</strong> nhật ký — <strong>${farmLabel}</strong> | Tổng N: ${(fsn+fon).toFixed(1)} kg | Diesel: ${fuelDiesel.toFixed(0)} lít | Vôi: ${limestone.toFixed(2)} t`;
+            infoEl.style.color = 'var(--success)';
+        } else {
+            infoEl.innerHTML = `<i class="fas fa-exclamation-circle" style="color:var(--warning);"></i> Không tìm thấy nhật ký canh tác cho bộ lọc đã chọn`;
+            infoEl.style.color = 'var(--warning)';
+        }
+    }
 
     calcEFF();
     calcEL();
     calcN2O();
+
+    // Render diary breakdown table
+    const tbody = document.getElementById('ec-diary-table-body');
+    const countEl = document.getElementById('ec-diary-count');
+    if (tbody) {
+        if (diaries.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="9"><div class="empty-state" style="padding:16px;"><i class="fas fa-book"></i><p>Không có nhật ký trong khoảng thời gian đã chọn</p></div></td></tr>';
+        } else {
+            const fuelLabel = t => t === 'diesel' ? 'Diesel' : t === 'petrol' ? 'Xăng' : t === 'lpg' ? 'LPG' : '--';
+            const nBadge = cat => cat === 'FON'
+                ? '<span class="badge badge-green">FON</span>'
+                : '<span class="badge badge-blue">FSN</span>';
+            tbody.innerHTML = diaries.map(e => `<tr>
+                <td>${e.date || '--'}</td>
+                <td><strong>${e.farm || '--'}</strong>${farmObj ? `<div style="font-size:10px;color:var(--text-muted);">${farmObj.code}</div>` : ''}</td>
+                <td>${e.fertilizerType || '--'}${e.fertilizerAmount ? ` — ${e.fertilizerAmount} kg` : ''}</td>
+                <td><strong style="color:var(--warning);">${parseFloat(e.nKg || 0).toFixed(3)}</strong></td>
+                <td>${nBadge(e.nCategory)}</td>
+                <td>${parseFloat(e.limestone || 0) > 0 ? parseFloat(e.limestone).toFixed(3) : '--'}</td>
+                <td>${parseFloat(e.dolomite || 0) > 0 ? parseFloat(e.dolomite).toFixed(3) : '--'}</td>
+                <td>${parseFloat(e.fuel || 0) > 0 ? `${fuelLabel(e.fuelType)} ${parseFloat(e.fuel).toFixed(0)} lít` : '--'}</td>
+                <td style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${(e.notes||'').replace(/"/g,"'")}">${e.notes || ''}</td>
+            </tr>`).join('');
+            if (countEl) countEl.textContent = `${diaries.length} bản ghi`;
+        }
+    }
 }
 
 // EFF_{wp,j,i,t} = FFC_{wp,j,i,t} × EF_{CO2,j}
