@@ -157,13 +157,28 @@ function buildNav() {
 
 function initSidebar() {
     const sidebar = document.getElementById('sidebar');
+
+    // Overlay for mobile drawer
+    let overlay = document.getElementById('sidebar-overlay');
+    if (!overlay) {
+        overlay = document.createElement('div');
+        overlay.id = 'sidebar-overlay';
+        overlay.className = 'sidebar-overlay';
+        document.body.appendChild(overlay);
+    }
+    const closeSidebar = () => { sidebar.classList.remove('mobile-open'); overlay.classList.remove('show'); };
+    overlay.addEventListener('click', closeSidebar);
+
     document.getElementById('sidebar-toggle')?.addEventListener('click', () => sidebar.classList.toggle('collapsed'));
-    document.getElementById('mobile-menu-btn')?.addEventListener('click', () => sidebar.classList.toggle('mobile-open'));
+    document.getElementById('mobile-menu-btn')?.addEventListener('click', () => {
+        const isOpen = sidebar.classList.toggle('mobile-open');
+        overlay.classList.toggle('show', isOpen);
+    });
     document.getElementById('logout-btn')?.addEventListener('click', logout);
-    document.addEventListener('click', (e) => {
-        if (sidebar.classList.contains('mobile-open') && !sidebar.contains(e.target) && e.target.id !== 'mobile-menu-btn') {
-            sidebar.classList.remove('mobile-open');
-        }
+
+    // Close on nav item click (mobile)
+    document.getElementById('nav-menu')?.addEventListener('click', (e) => {
+        if (e.target.closest('a') && window.innerWidth <= 768) closeSidebar();
     });
 }
 

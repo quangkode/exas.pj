@@ -1334,7 +1334,7 @@ function runDialecticalAnalysis() {
     const emiColor = emissionsPerHa > EMI_HIGH ? 'var(--danger)' : emissionsPerHa > EMI_HIGH * 0.7 ? 'var(--warning)' : 'var(--success)';
 
     const metricCards = `
-    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px;">
+    <div class="analysis-grid" style="grid-template-columns:repeat(3,1fr);margin-bottom:20px;">
         <div style="padding:14px;background:var(--bg-light);border-radius:8px;border-left:3px solid ${biomassScore != null ? (biomassScore > 65 ? 'var(--success)' : biomassScore > 40 ? 'var(--warning)' : 'var(--danger)') : 'var(--border)'};">
             <div style="font-size:11px;color:var(--text-muted);margin-bottom:6px;"><i class="fas fa-leaf"></i> Chỉ số sinh khối tàn dư</div>
             ${bioScoreBar}
