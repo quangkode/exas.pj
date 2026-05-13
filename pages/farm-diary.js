@@ -58,6 +58,18 @@ function renderFarmDiary(container) {
                     <button class="modal-close" onclick="closeDiaryModal()"><i class="fas fa-times"></i></button>
                 </div>
                 <div class="modal-body">
+                    <!-- File upload shortcut -->
+                    <div style="background:var(--bg-secondary);border-radius:8px;padding:10px 14px;margin-bottom:16px;display:flex;align-items:center;gap:10px;cursor:pointer;border:1px dashed var(--border);"
+                         onclick="document.getElementById('diary-modal-file').click()">
+                        <i class="fas fa-file-excel" style="color:#1d7a45;font-size:18px;"></i>
+                        <div style="flex:1;">
+                            <div style="font-size:13px;font-weight:600;">Đọc từ file Excel / CSV</div>
+                            <div style="font-size:11px;color:var(--text-muted);">1 dòng → tự điền form | nhiều dòng → nhập thẳng tất cả</div>
+                        </div>
+                        <span style="font-size:11px;color:var(--info);font-weight:600;">Chọn file</span>
+                        <input type="file" id="diary-modal-file" accept=".csv,.xlsx,.xls" style="display:none"
+                               onchange="loadDiaryFromFile(this.files[0]);this.value=''">
+                    </div>
                     <form id="diary-form">
                         <div class="form-row">
                             <div class="form-group">
@@ -616,6 +628,81 @@ function confirmDiaryImport() {
         'blue'
     );
     _diaryImportRows = [];
+}
+
+function loadDiaryFromFile(file) {
+    if (!file) return;
+    const farms = JSON.parse(localStorage.getItem('mrv_farms') || '[]');
+    const process = aoa => {
+        if (!aoa || aoa.length < 2) { alert('File trống hoặc thiếu tiêu đề.'); return; }
+        const map = mapDiaryHeader(aoa[0]);
+        const dataRows = aoa.slice(1).filter(r => r && r.some(c => c));
+        if (dataRows.length === 0) { alert('Không có dữ liệu trong file.'); return; }
+
+        if (dataRows.length === 1) {
+            // Auto-fill form
+            const entry = parseRowToDiary(dataRows[0], map, farms);
+            if (!entry) { alert('Không đọc được dữ liệu từ dòng đầu tiên.'); return; }
+            const farmSel = document.getElementById('diary-farm');
+            if (farmSel) {
+                farmSel.innerHTML = '<option value="">Chọn nông hộ</option>' +
+                    farms.map(f => `<option value="${f.name}">[${f.code}] ${f.name}</option>`).join('');
+                farmSel.value = entry.farm;
+                if (!farmSel.value) {
+                    const opt = document.createElement('option');
+                    opt.value = entry.farm; opt.textContent = entry.farm; opt.selected = true;
+                    farmSel.appendChild(opt);
+                }
+            }
+            const set = (id, val) => { const el = document.getElementById(id); if (el && val !== undefined && val !== null) el.value = val; };
+            set('diary-date', entry.date);
+            set('diary-crop', entry.crop);
+            set('diary-area', entry.area || '');
+            set('diary-fertilizer-type', entry.fertilizerType);
+            set('diary-n-category', entry.nCategory);
+            set('diary-fertilizer-amount', entry.fertilizerAmount || '');
+            set('diary-n-percent', entry.nPercent || '');
+            set('diary-limestone', entry.limestone || '');
+            set('diary-dolomite', entry.dolomite || '');
+            set('diary-fuel-type', entry.fuelType);
+            set('diary-fuel', entry.fuel || '');
+            set('diary-notes', entry.notes);
+            calcDiaryNKg();
+        } else {
+            // Multiple rows → bulk import directly
+            if (!confirm(`File có ${dataRows.length} dòng. Nhập tất cả vào nhật ký?`)) return;
+            const ts = Date.now();
+            const newRows = dataRows.map((r, i) => {
+                const e = parseRowToDiary(r, map, farms);
+                return e ? { ...e, id: ts + i } : null;
+            }).filter(Boolean);
+            if (!newRows.length) { alert('Không có dòng hợp lệ để nhập.'); return; }
+            const existing = JSON.parse(localStorage.getItem('mrv_diaries') || '[]');
+            const merged = [...existing, ...newRows];
+            localStorage.setItem('mrv_diaries', JSON.stringify(merged));
+            diaryEntries = merged;
+            closeDiaryModal();
+            loadDiaryData();
+            addAuditEntry('Nhập nhật ký từ file', `${newRows.length} dòng — ${[...new Set(newRows.map(r => r.farm))].join(', ')}`, 'blue');
+            alert(`Đã nhập ${newRows.length} dòng thành công.`);
+        }
+    };
+    const name = file.name.toLowerCase();
+    const reader = new FileReader();
+    if (name.endsWith('.csv')) {
+        reader.onload = e => process(parseDiaryCSV(e.target.result));
+        reader.readAsText(file, 'UTF-8');
+    } else if (name.endsWith('.xlsx') || name.endsWith('.xls')) {
+        reader.onload = e => {
+            if (typeof XLSX === 'undefined') { alert('Thư viện XLSX chưa tải. Dùng file CSV.'); return; }
+            const wb = XLSX.read(e.target.result, { type: 'binary' });
+            const ws = wb.Sheets[wb.SheetNames[0]];
+            process(XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' }));
+        };
+        reader.readAsBinaryString(file);
+    } else {
+        alert('Chỉ hỗ trợ .csv, .xlsx, .xls');
+    }
 }
 
 function loadDiaryData() {
