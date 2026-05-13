@@ -361,10 +361,15 @@ function saveDiary() {
     const nPct = parseFloat(document.getElementById('diary-n-percent').value) || 0;
     const nKg = parseFloat((fertAmount * nPct / 100).toFixed(3));
 
+    const farmName = document.getElementById('diary-farm').value || 'Chưa chọn';
+    const farmsData = JSON.parse(localStorage.getItem('mrv_farms') || '[]');
+    const selectedFarm = farmsData.find(f => f.name === farmName);
+
     const entry = {
         id: Date.now(),
         date: document.getElementById('diary-date').value,
-        farm: document.getElementById('diary-farm').value || 'Chưa chọn',
+        farm: farmName,
+        farmCode: selectedFarm ? selectedFarm.code : '',
         crop: document.getElementById('diary-crop').value,
         area: parseFloat(document.getElementById('diary-area').value) || 0,
         // Phân bón (N₂O source)
@@ -513,7 +518,7 @@ function parseRowToDiary(row, map, farms) {
     const area = pn('area') || (resolved && resolved.area ? resolved.area : 0);
 
     return {
-        date, farm: farmName, crop: pf('crop'), area,
+        date, farm: farmName, farmCode: resolved ? resolved.code : '', crop: pf('crop'), area,
         fertilizerType: pf('fertilizerType'),
         nCategory, fertilizerAmount: fertAmount, nPercent: nPct, nKg,
         limestone: pn('limestone'), dolomite: pn('dolomite'),
@@ -709,10 +714,15 @@ function loadDiaryData() {
     // Populate farm filter dropdown
     const farmFilter = document.getElementById('diary-filter-farm');
     if (farmFilter) {
+        const farmsReg = JSON.parse(localStorage.getItem('mrv_farms') || '[]');
         const farmNames = [...new Set(diaryEntries.map(e => e.farm))].sort();
         const cur = farmFilter.value;
         farmFilter.innerHTML = '<option value="">Tất cả nông hộ</option>' +
-            farmNames.map(f => `<option value="${f}" ${f === cur ? 'selected' : ''}>${f}</option>`).join('');
+            farmNames.map(f => {
+                const fo = farmsReg.find(x => x.name === f);
+                const label = fo ? `[${fo.code}] ${f}` : f;
+                return `<option value="${f}" ${f === cur ? 'selected' : ''}>${label}</option>`;
+            }).join('');
     }
 
     const tbody = document.getElementById('diary-table-body');

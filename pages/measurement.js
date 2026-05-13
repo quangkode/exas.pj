@@ -791,15 +791,19 @@ function loadSOCData() {
         </tr>`;
     }).join('');
 
-    const farms = [...new Set(socEntries.map(e => e.farm))].filter(f => f !== '--');
+    const socFarmNames = [...new Set(socEntries.map(e => e.farm))].filter(f => f !== '--');
+    const regFarms = JSON.parse(localStorage.getItem('mrv_farms') || '[]');
     const farmFilter = document.getElementById('soc-farm-filter');
     if (farmFilter) {
         const currentValue = farmFilter.value;
         farmFilter.innerHTML = '<option value="">Tất cả nông hộ</option>' +
-            farms.map(f => `<option value="${f}">${f}</option>`).join('');
-        // Auto-select: giữ lựa chọn cũ hoặc chọn farm đầu tiên
-        farmFilter.value = currentValue || (farms.length === 1 ? farms[0] : '');
-        if (!farmFilter.value && farms.length > 0) farmFilter.value = farms[0];
+            socFarmNames.map(f => {
+                const fo = regFarms.find(x => x.name === f);
+                const label = fo ? `[${fo.code}] ${f}` : f;
+                return `<option value="${f}">${label}</option>`;
+            }).join('');
+        farmFilter.value = currentValue || (socFarmNames.length === 1 ? socFarmNames[0] : '');
+        if (!farmFilter.value && socFarmNames.length > 0) farmFilter.value = socFarmNames[0];
     }
 
     // Tự điền x từ kỳ đo (20/03/2023 → 20/04/2024 = 1.09 năm → làm tròn 1)

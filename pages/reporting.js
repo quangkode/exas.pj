@@ -547,9 +547,10 @@ function exportExcel() {
 
     let diaries = JSON.parse(localStorage.getItem('mrv_diaries') || '[]');
     let socData = JSON.parse(localStorage.getItem('mrv_soc') || '[]');
+    const farmsForFilter = JSON.parse(localStorage.getItem('mrv_farms') || '[]');
     if (farmFilter) {
-        diaries = diaries.filter(e => e.farm === farmFilter);
-        socData = socData.filter(e => e.farm === farmFilter);
+        diaries = diaries.filter(e => matchesFarm(e, farmFilter, farmsForFilter));
+        socData = socData.filter(e => matchesFarm(e, farmFilter, farmsForFilter));
     }
 
     const em = getReportEmissionData();
@@ -993,45 +994,47 @@ function renderEmissionCalc(container) {
 function populateEmissionFarmFilter() {
     const farms   = JSON.parse(localStorage.getItem('mrv_farms')   || '[]');
     const diaries = JSON.parse(localStorage.getItem('mrv_diaries') || '[]');
-    const diaryFarmSet = new Set(diaries.map(e => e.farm).filter(Boolean));
 
     const select = document.getElementById('ec-farm-filter');
     if (!select) return;
 
-    // Build options: registered farms first (with code), then any unregistered diary farms
-    const registeredNames = new Set(farms.map(f => f.name));
-    const extraNames = [...diaryFarmSet].filter(n => !registeredNames.has(n));
+    // Use farmCode as option value for registered farms (stable identifier)
+    const registeredCodes = new Set(farms.map(f => f.code));
+    const extraDiaryFarms = diaries
+        .filter(e => !e.farmCode || !registeredCodes.has(e.farmCode))
+        .map(e => e.farm).filter(Boolean);
+    const extraUnique = [...new Set(extraDiaryFarms)].filter(n => !farms.find(f => f.name === n));
 
     select.innerHTML =
         '<option value="">Tất cả nông hộ</option>' +
         farms.map(f => {
-            const hasDiary = diaryFarmSet.has(f.name);
-            return `<option value="${f.name}" ${hasDiary ? '' : 'style="color:var(--text-muted)"'}>[${f.code}] ${f.name}</option>`;
+            const hasDiary = diaries.some(e => matchesFarm(e, f.code, farms));
+            return `<option value="${f.code}" ${hasDiary ? '' : 'style="color:var(--text-muted)"'}>[${f.code}] ${f.name}</option>`;
         }).join('') +
-        extraNames.map(n => `<option value="${n}">${n}</option>`).join('');
+        extraUnique.map(n => `<option value="${n}">${n}</option>`).join('');
 
     // Auto-select first farm that has diary data
-    const first = farms.find(f => diaryFarmSet.has(f.name));
-    if (first) select.value = first.name;
+    const first = farms.find(f => diaries.some(e => matchesFarm(e, f.code, farms)));
+    if (first) select.value = first.code;
 
     select.addEventListener('change', autoFillEmissionFields);
 }
 
 function autoFillEmissionFields() {
-    const farmName = document.getElementById('ec-farm-filter')?.value || '';
+    const farmFilter = document.getElementById('ec-farm-filter')?.value || '';
 
-    // Auto-fill area from mrv_farms
     const farms   = JSON.parse(localStorage.getItem('mrv_farms')   || '[]');
     const diaries = JSON.parse(localStorage.getItem('mrv_diaries') || '[]');
 
-    const farmObj = farms.find(f => f.name === farmName);
+    // Resolve farm object by code (new) or name (legacy)
+    const farmObj = farms.find(f => f.code === farmFilter) || farms.find(f => f.name === farmFilter);
     const areaEl  = document.getElementById('ec-area');
     if (areaEl && farmObj) {
         areaEl.value = parseFloat(farmObj.area) || '';
     }
 
-    // Auto-fill date range from diary dates for this farm
-    const filtered = farmName ? diaries.filter(e => e.farm === farmName) : diaries;
+    // Auto-fill date range using matchesFarm for backward compat
+    const filtered = farmFilter ? diaries.filter(e => matchesFarm(e, farmFilter, farms)) : diaries;
     const dates = filtered.map(e => e.date).filter(Boolean).sort();
     if (dates.length) {
         const fromEl = document.getElementById('ec-date-from');
@@ -1051,12 +1054,13 @@ function autoFillEmissionFields() {
 }
 
 function getFilteredDiaries() {
-    const diaries = JSON.parse(localStorage.getItem('mrv_diaries') || '[]');
-    const farm = document.getElementById('ec-farm-filter')?.value || '';
+    const diaries  = JSON.parse(localStorage.getItem('mrv_diaries') || '[]');
+    const farms    = JSON.parse(localStorage.getItem('mrv_farms')   || '[]');
+    const farm     = document.getElementById('ec-farm-filter')?.value || '';
     const dateFrom = document.getElementById('ec-date-from')?.value || '';
-    const dateTo = document.getElementById('ec-date-to')?.value || '';
+    const dateTo   = document.getElementById('ec-date-to')?.value || '';
     return diaries.filter(e => {
-        if (farm && e.farm !== farm) return false;
+        if (farm && !matchesFarm(e, farm, farms)) return false;
         if (dateFrom && e.date < dateFrom) return false;
         if (dateTo && e.date > dateTo) return false;
         return true;
@@ -1064,10 +1068,10 @@ function getFilteredDiaries() {
 }
 
 function runEmissionCalc() {
-    const diaries  = getFilteredDiaries();
-    const farmName = document.getElementById('ec-farm-filter')?.value || '';
-    const farms    = JSON.parse(localStorage.getItem('mrv_farms') || '[]');
-    const farmObj  = farms.find(f => f.name === farmName);
+    const diaries    = getFilteredDiaries();
+    const farmFilter = document.getElementById('ec-farm-filter')?.value || '';
+    const farms      = JSON.parse(localStorage.getItem('mrv_farms') || '[]');
+    const farmObj    = farms.find(f => f.code === farmFilter) || farms.find(f => f.name === farmFilter);
 
     let fuelDiesel = 0, fuelPetrol = 0, fuelLpg = 0;
     let limestone = 0, dolomite = 0;
@@ -1106,7 +1110,7 @@ function runEmissionCalc() {
     const infoEl = document.getElementById('ec-data-info');
     if (infoEl) {
         if (diaries.length > 0) {
-            const farmLabel = farmObj ? `[${farmObj.code}] ${farmObj.name}` : (farmName || 'Tất cả nông hộ');
+            const farmLabel = farmObj ? `[${farmObj.code}] ${farmObj.name}` : (farmFilter || 'Tất cả nông hộ');
             infoEl.innerHTML = `<i class="fas fa-check-circle" style="color:var(--success);"></i> Đã tải <strong>${diaries.length}</strong> nhật ký — <strong>${farmLabel}</strong> | Tổng N: ${(fsn+fon).toFixed(1)} kg | Diesel: ${fuelDiesel.toFixed(0)} lít | Vôi: ${limestone.toFixed(2)} t`;
             infoEl.style.color = 'var(--success)';
         } else {
@@ -1132,7 +1136,7 @@ function runEmissionCalc() {
                 : '<span class="badge badge-blue">FSN</span>';
             tbody.innerHTML = diaries.map(e => `<tr>
                 <td>${e.date || '--'}</td>
-                <td><strong>${e.farm || '--'}</strong>${farmObj ? `<div style="font-size:10px;color:var(--text-muted);">${farmObj.code}</div>` : ''}</td>
+                <td><strong>${e.farm || '--'}</strong>${(e.farmCode || farmObj?.code) ? `<div style="font-size:10px;color:var(--text-muted);">${e.farmCode || farmObj.code}</div>` : ''}</td>
                 <td>${e.fertilizerType || '--'}${e.fertilizerAmount ? ` — ${e.fertilizerAmount} kg` : ''}</td>
                 <td><strong style="color:var(--warning);">${parseFloat(e.nKg || 0).toFixed(3)}</strong></td>
                 <td>${nBadge(e.nCategory)}</td>
@@ -1381,7 +1385,7 @@ function autoFillRecForm() {
 
     // Lấy lượng phân trung bình từ nhật ký
     const diaries = JSON.parse(localStorage.getItem('mrv_diaries') || '[]');
-    const farmDiaries = diaries.filter(d => d.farm === farmName && d.fertilizerAmount > 0);
+    const farmDiaries = diaries.filter(d => matchesFarm(d, farmName, farms) && d.fertilizerAmount > 0);
     if (farmDiaries.length && f.area) {
         const avgPerHa = farmDiaries.reduce((s, d) => s + d.fertilizerAmount, 0) / farmDiaries.length / parseFloat(f.area);
         document.getElementById('rec-fert-current').value = avgPerHa.toFixed(0);

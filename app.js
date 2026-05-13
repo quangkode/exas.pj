@@ -223,3 +223,19 @@ function renderPage(page) {
         content.innerHTML = `<div class="empty-state"><i class="fas fa-tools"></i><p>Trang đang phát triển</p></div>`;
     }
 }
+
+// ===== FARM MATCHING UTILITY =====
+// Matches a data entry (diary/SOC/etc.) to a farm filter value (code OR name).
+// Handles both old entries (farm-name only) and new entries (with farmCode).
+function matchesFarm(entry, filterValue, farms) {
+    if (!filterValue) return true;
+    if (!entry) return false;
+    if (entry.farmCode && entry.farmCode === filterValue) return true;
+    if (entry.farm === filterValue) return true;
+    const fList = farms || JSON.parse(localStorage.getItem('mrv_farms') || '[]');
+    const byCode = fList.find(f => f.code === filterValue);
+    if (byCode && entry.farm === byCode.name) return true;
+    const byName = fList.find(f => f.name === filterValue);
+    if (byName && entry.farmCode === byName.code) return true;
+    return false;
+}
