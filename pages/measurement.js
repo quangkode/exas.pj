@@ -285,9 +285,9 @@ function renderSoilData(container) {
         <div class="card">
             <div class="table-wrapper">
                 <table class="data-table">
-                    <thead><tr><th>Ngày lấy mẫu</th><th>Nông hộ</th><th>Lớp đất</th><th>OC (g/kg)</th><th>SOC (%)</th><th>M<sub>n,dl</sub> (g)</th><th>D (mm) / N</th><th>M<sub>n,dl,SOC</sub> (tC/ha)</th><th>Phòng Lab</th><th>Ghi chú</th></tr></thead>
+                    <thead><tr><th>Ngày lấy mẫu</th><th>Nông hộ</th><th>Lớp đất</th><th>OC (g/kg)</th><th>SOC (%)</th><th>M<sub>n,dl</sub> (g)</th><th>D (mm) / N</th><th>M<sub>n,dl,SOC</sub> (tC/ha)</th><th>Phòng Lab</th><th>Ghi chú</th><th></th></tr></thead>
                     <tbody id="soc-table-body">
-                        <tr><td colspan="10"><div class="empty-state"><i class="fas fa-vial"></i><p>Chưa có dữ liệu phân tích đất</p></div></td></tr>
+                        <tr><td colspan="11"><div class="empty-state"><i class="fas fa-vial"></i><p>Chưa có dữ liệu phân tích đất</p></div></td></tr>
                     </tbody>
                 </table>
             </div>
@@ -761,14 +761,21 @@ function calculateSOCStats() {
 function loadSOCData() {
     const tbody = document.getElementById('soc-table-body');
     if (!tbody) return;
+
+    // Tự xóa các entry "ghi chú chung" (không có OC và mSample, chỉ có notes)
+    const before = socEntries.length;
+    socEntries = socEntries.filter(e => !((!e.ocGperKg || e.ocGperKg === 0) && (!e.mSample || e.mSample === 0) && e.notes && e.notes.trim().length > 0));
+    if (socEntries.length !== before) localStorage.setItem('mrv_soc', JSON.stringify(socEntries));
+
     if (socEntries.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="10"><div class="empty-state"><i class="fas fa-vial"></i><p>Chưa có dữ liệu phân tích đất</p></div></td></tr>';
+        tbody.innerHTML = '<tr><td colspan="11"><div class="empty-state"><i class="fas fa-vial"></i><p>Chưa có dữ liệu phân tích đất</p></div></td></tr>';
         return;
     }
     tbody.innerHTML = socEntries.map(e => {
         const period = e.isBeginning ? '📊 Đầu vụ' : '✓ Cuối vụ';
         const ocDisplay = e.ocGperKg || (e.soc ? (e.soc * 10).toFixed(1) : '--');
         const socMassDisplay = e.socMassVM0042 != null ? `<strong style="color:var(--primary-light);">${parseFloat(e.socMassVM0042).toFixed(4)}</strong>` : '--';
+        const shortNote = e.notes ? (' | ' + e.notes.slice(0, 60) + (e.notes.length > 60 ? '…' : '')) : '';
         return `<tr>
             <td>${e.date}</td>
             <td>${e.farm}</td>
@@ -779,7 +786,8 @@ function loadSOCData() {
             <td>${e.tubeDiameter || '--'} / ${e.numCores || '--'}</td>
             <td>${socMassDisplay} tC/ha</td>
             <td>${e.lab || '--'}</td>
-            <td>${period}${e.notes ? ' | ' + e.notes : ''}</td>
+            <td style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${(e.notes||'').replace(/"/g,"'")}"}>${period}${shortNote}</td>
+            <td><button class="btn-icon" onclick="deleteSOCEntry(${JSON.stringify(e.id)})" title="Xóa" style="color:var(--danger);"><i class="fas fa-trash"></i></button></td>
         </tr>`;
     }).join('');
 
@@ -816,6 +824,13 @@ function loadSOCData() {
 
     renderBiomassSection();
     if (socEntries.length > 0) setTimeout(runDialecticalAnalysis, 200);
+}
+
+function deleteSOCEntry(id) {
+    if (!confirm('Xác nhận xóa mẫu phân tích đất này?')) return;
+    socEntries = socEntries.filter(e => e.id != id);
+    localStorage.setItem('mrv_soc', JSON.stringify(socEntries));
+    loadSOCData();
 }
 
 /* ===== SOC FILE IMPORT ===== */
