@@ -31,6 +31,7 @@ const NAV_CONFIG = {
         { id: 'soil-data', icon: 'fa-vial', label: 'Phân tích đất (SOC)' },
         { section: 'Báo cáo' },
         { id: 'reports', icon: 'fa-file-alt', label: 'Báo cáo VM0042' },
+        { id: 'farm-recommend', icon: 'fa-clipboard-list', label: 'Đề xuất canh tác' },
         { id: 'emission-calc', icon: 'fa-calculator', label: 'Tính toán phát thải' },
         { section: 'Xác minh' },
         { id: 'evidence', icon: 'fa-camera', label: 'Bằng chứng số' },
@@ -120,6 +121,7 @@ function showApp() {
     document.getElementById('app').style.display = 'flex';
     document.getElementById('user-display-name').textContent = currentUser.name;
     document.getElementById('user-display-role').textContent = currentUser.displayRole;
+    if (typeof initDefaultFarms === 'function') initDefaultFarms();
     buildNav();
     navigateTo('dashboard');
     initSidebar();
@@ -192,6 +194,7 @@ function renderPage(page) {
         'evidence': renderEvidence,
         'farm-map': renderFarmMap,
         'reports': renderReports,
+        'farm-recommend': renderFarmRecommend,
         'emission-calc': renderEmissionCalc,
         'audit-log': renderAuditLog,
         'vvb-portal': renderVVBPortal,

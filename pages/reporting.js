@@ -1102,3 +1102,352 @@ function updateEmissionTotal() {
     const totalEl = document.getElementById('sum-total');
     if (totalEl && total >= 0) totalEl.textContent = total.toFixed(4);
 }
+
+/* ========== ĐỀ XUẤT CANH TÁC ========== */
+
+// Ma trận đề xuất phân bón
+const FERT_RECS = {
+    '<4': {
+        non: { rai: 'Tăng chu kỳ lên 4-6 lần/năm, tăng 120-150 kg/ha', cuoc: 'Tăng chu kỳ lên 4-6 lần/năm, tăng 100-120 kg/ha', hoc: 'Tăng chu kỳ lên 4-6 lần/năm, tăng 80-100 kg/ha' },
+        gia: { rai: 'Tăng chu kỳ lên 4-6 lần/năm, tăng 200-250 kg/ha', cuoc: 'Tăng chu kỳ lên 4-6 lần/năm, tăng 150-180 kg/ha', hoc: 'Tăng chu kỳ lên 4-6 lần/năm, tăng 120-150 kg/ha' }
+    },
+    '4-6': {
+        non: { rai: 'Giữ nguyên chu kỳ, bù hao hụt thêm 60-80 kg/ha',  cuoc: 'Giữ nguyên chu kỳ, bù hao hụt thêm 40-60 kg/ha',  hoc: 'Giữ nguyên chu kỳ, bù hao hụt thêm 30-50 kg/ha'  },
+        gia: { rai: 'Giữ nguyên chu kỳ, bù hao hụt thêm 100-130 kg/ha', cuoc: 'Giữ nguyên chu kỳ, bù hao hụt thêm 70-90 kg/ha',  hoc: 'Giữ nguyên chu kỳ, bù hao hụt thêm 50-70 kg/ha'  }
+    },
+    '7-9': {
+        non: { rai: 'Giảm chu kỳ xuống 4-6 lần/năm, giảm 80-100 kg/ha',   cuoc: 'Giảm chu kỳ xuống 4-6 lần/năm, giảm 100-120 kg/ha',  hoc: 'Giảm chu kỳ xuống 4-6 lần/năm, giảm 120-150 kg/ha' },
+        gia: { rai: 'Giảm chu kỳ xuống 4-6 lần/năm, giảm 120-150 kg/ha',  cuoc: 'Giảm chu kỳ xuống 4-6 lần/năm, giảm 150-180 kg/ha',  hoc: 'Giảm chu kỳ xuống 4-6 lần/năm, giảm 180-220 kg/ha' }
+    },
+    '>9': {
+        non: { rai: 'Giảm chu kỳ xuống 7-9 lần/năm, giảm 100-130 kg/ha',  cuoc: 'Giảm chu kỳ xuống 7-9 lần/năm, giảm 130-160 kg/ha',  hoc: 'Giảm chu kỳ xuống 7-9 lần/năm, giảm 150-180 kg/ha' },
+        gia: { rai: 'Giảm chu kỳ xuống 7-9 lần/năm, giảm 150-200 kg/ha',  cuoc: 'Giảm chu kỳ xuống 7-9 lần/năm, giảm 200-250 kg/ha',  hoc: 'Giảm chu kỳ xuống 7-9 lần/năm, giảm 220-280 kg/ha' }
+    }
+};
+
+const FERT_OUTCOMES = {
+    TH1: {
+        title: 'Trường hợp 1 (TH1) — Tăng bón (vườn bón thiếu)',
+        biomass: 'Tăng từ 8% đến 25% hàm lượng tàn dư sinh khối',
+        co2: 'Lượng CO₂ giữ trong đất tăng tương ứng 8-25%',
+        detail: 'Sinh khối bộ rễ, thân, lá rụng tăng → tàn dư hữu cơ trả lại đất tăng → SOC tích lũy nhiều hơn.'
+    },
+    TH2: {
+        title: 'Trường hợp 2 (TH2) — Giảm bón (vườn bón dư)',
+        biomass: 'Giảm sinh khối mới 4-15%, nhưng bảo toàn SOC tồn trữ',
+        co2: 'Giảm phát thải N₂O + bảo vệ vi sinh vật đất → ổn định CO₂ dài hạn',
+        detail: 'Giảm phân hóa học dư thừa: (1) giảm N₂O phát thải trực tiếp, (2) bảo vệ vi sinh vật và cấu trúc đất, (3) carbon tồn trữ không bị đốt cháy do pH ổn định.'
+    }
+};
+
+function harvestToCategory(n) {
+    n = parseInt(n) || 0;
+    if (n < 4)  return '<4';
+    if (n <= 6) return '4-6';
+    if (n <= 9) return '7-9';
+    return '>9';
+}
+
+function pHToLimeRec(pH) {
+    pH = parseFloat(pH);
+    if (!pH) return { dose: '--', note: 'Chưa có dữ liệu pH' };
+    if (pH <= 4.5) return { dose: '< 1 tấn vôi/ha',    note: 'Đất rất chua — cần bón vôi khẩn cấp để nâng pH lên 5.5-6.5' };
+    if (pH <= 5.5) return { dose: '< 0.5 tấn vôi/ha',  note: 'Đất chua vừa — bón vôi định kỳ 1-2 lần/năm' };
+    if (pH <= 6.5) return { dose: '< 250 kg vôi/ha',   note: 'Đất gần tối ưu — bón vôi duy trì nhẹ' };
+    return             { dose: 'Không cần bón vôi',   note: 'Độ pH tối ưu (>6.5) — theo dõi định kỳ' };
+}
+
+function renderFarmRecommend(container) {
+    const farms = JSON.parse(localStorage.getItem('mrv_farms') || '[]');
+    const farmOptions = farms.map(f => `<option value="${f.name}">${f.name} (${f.code})</option>`).join('');
+
+    container.innerHTML = `
+        <div class="page-header">
+            <h1 class="page-title">Đề xuất Canh tác Bền vững</h1>
+            <p class="page-desc">Khung đề xuất canh tác dừa bền vững theo chu kỳ 1 năm — dựa trên dữ liệu nông hộ</p>
+        </div>
+
+        <div class="card" style="margin-bottom:20px;">
+            <div class="card-header"><div class="card-title"><i class="fas fa-sliders-h"></i> Thông tin đầu vào</div></div>
+            <div style="padding:20px;">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Chọn nông hộ</label>
+                        <select id="rec-farm" onchange="autoFillRecForm()">
+                            <option value="">-- Chọn nông hộ --</option>
+                            ${farmOptions}
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Nhóm cây dừa</label>
+                        <select id="rec-tree-cat">
+                            <option value="non">Dừa non (dưới 7 tuổi)</option>
+                            <option value="gia" selected>Dừa già (7 tuổi trở lên)</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Số lần thu hoạch hiện tại (lần/năm)</label>
+                        <input type="number" id="rec-harvests" placeholder="VD: 10" min="1">
+                    </div>
+                    <div class="form-group">
+                        <label>Phương pháp bón phân hiện tại</label>
+                        <select id="rec-fert-method">
+                            <option value="rai">Rải mặt líp</option>
+                            <option value="cuoc">Cuốc rãnh</option>
+                            <option value="hoc">Đào hốc</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Độ pH đất hiện tại (nếu có)</label>
+                        <input type="number" id="rec-ph" step="0.1" min="0" max="14" placeholder="VD: 4.8">
+                    </div>
+                    <div class="form-group">
+                        <label>Mùa vụ / Giai đoạn</label>
+                        <select id="rec-season">
+                            <option value="kho">Mùa khô</option>
+                            <option value="mua">Mùa mưa / Mưa ít</option>
+                            <option value="man">Đỉnh mặn / Mặn xâm nhập sâu</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Diện tích (ha)</label>
+                        <input type="number" id="rec-area" step="0.01" placeholder="4.6">
+                    </div>
+                    <div class="form-group">
+                        <label>Lượng phân hiện tại (kg/ha/lần)</label>
+                        <input type="number" id="rec-fert-current" placeholder="VD: 134">
+                    </div>
+                </div>
+                <div style="display:flex;gap:12px;flex-wrap:wrap;">
+                    <button class="btn btn-primary" onclick="generateRecommendReport()">
+                        <i class="fas fa-file-medical-alt"></i> Tạo báo cáo đề xuất
+                    </button>
+                    <button class="btn btn-secondary" onclick="printRecommendReport()">
+                        <i class="fas fa-print"></i> In / Xuất PDF
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div id="recommend-output" style="display:none;"></div>
+    `;
+
+    // Auto-select first farm
+    if (farms.length > 0) {
+        document.getElementById('rec-farm').value = farms[0].name;
+        autoFillRecForm();
+    }
+}
+
+function autoFillRecForm() {
+    const farmName = document.getElementById('rec-farm')?.value;
+    if (!farmName) return;
+    const farms = JSON.parse(localStorage.getItem('mrv_farms') || '[]');
+    const f = farms.find(x => x.name === farmName);
+    if (!f) return;
+
+    const age = parseInt(f.treeAge) || 0;
+    if (document.getElementById('rec-tree-cat'))
+        document.getElementById('rec-tree-cat').value = age < 7 ? 'non' : 'gia';
+    if (document.getElementById('rec-harvests') && f.harvestsPerYear)
+        document.getElementById('rec-harvests').value = f.harvestsPerYear;
+    if (document.getElementById('rec-area') && f.area)
+        document.getElementById('rec-area').value = f.area;
+
+    // Lấy lượng phân trung bình từ nhật ký
+    const diaries = JSON.parse(localStorage.getItem('mrv_diaries') || '[]');
+    const farmDiaries = diaries.filter(d => d.farm === farmName && d.fertilizerAmount > 0);
+    if (farmDiaries.length && f.area) {
+        const avgPerHa = farmDiaries.reduce((s, d) => s + d.fertilizerAmount, 0) / farmDiaries.length / parseFloat(f.area);
+        document.getElementById('rec-fert-current').value = avgPerHa.toFixed(0);
+    }
+}
+
+let _recReportHtml = '';
+
+function generateRecommendReport() {
+    const farmName = document.getElementById('rec-farm')?.value || 'Chưa chọn';
+    const treeCat  = document.getElementById('rec-tree-cat')?.value || 'gia';
+    const harvests = document.getElementById('rec-harvests')?.value || '0';
+    const fertMethod = document.getElementById('rec-fert-method')?.value || 'rai';
+    const pH       = document.getElementById('rec-ph')?.value || '';
+    const season   = document.getElementById('rec-season')?.value || 'kho';
+    const area     = document.getElementById('rec-area')?.value || '--';
+    const fertCurrent = document.getElementById('rec-fert-current')?.value || '--';
+
+    const hCat = harvestToCategory(harvests);
+    const rec  = FERT_RECS[hCat]?.[treeCat]?.[fertMethod] || 'Không tìm thấy đề xuất phù hợp';
+    const isIncrease = hCat === '<4' || hCat === '4-6';
+    const thCase = isIncrease ? 'TH1' : 'TH2';
+    const outcome = FERT_OUTCOMES[thCase];
+    const limeRec = pHToLimeRec(pH);
+
+    const methodLabels = { rai: 'Rải mặt líp', cuoc: 'Cuốc rãnh', hoc: 'Đào hốc' };
+    const hCatLabels   = { '<4': '< 4 lần/năm', '4-6': '4-6 lần/năm', '7-9': '7-9 lần/năm', '>9': '> 9 lần/năm' };
+    const seasonLabels = { kho: 'Mùa khô', mua: 'Mùa mưa / Mưa ít', man: 'Đỉnh mặn / Mặn xâm nhập sâu' };
+
+    const waterRecs = {
+        kho: {
+            action: 'Tưới 2-3 lần/tuần, lượng 30-40 lít/gốc/lần vào sáng sớm hoặc chiều mát',
+            detail: 'Tưới lặp lại 30-60 phút để hạt đất nở ra trám khe nứt. Duy trì mực nước mương cách mặt líp 30-40 cm để tận dụng lực mao dẫn.',
+            outcome: 'Đưa đất về độ ẩm tối ưu 40-70%, chặn quá trình phèn hóa, rễ hấp thụ dinh dưỡng liên tục.'
+        },
+        mua: {
+            action: 'Ngưng tưới hoàn toàn khi mưa đủ. Chỉ tưới bổ sung khi vắt đất sâu 30 cm thấy khô',
+            detail: 'Khơi thông mương rãnh để thoát nước nhanh. Đảm bảo thời gian bão hòa không quá 2-5 ngày.',
+            outcome: 'Tránh rửa trôi dinh dưỡng. Rễ thông thoáng, giảm phát thải CH₄ do đất ngập úng.'
+        },
+        man: {
+            action: 'Duy trì tưới liên tục 2-3 tuần khi độ mặn < 4‰. Ngưng hoàn toàn nếu mặn > 4‰',
+            detail: 'Tuyệt đối không tưới nước mặn > 4‰ rồi để khô luân phiên (gây sinh phèn). Tăng cường tủ gốc bằng sinh khối dày để giữ ẩm tồn dư.',
+            outcome: 'Giảm "dừa treo" (rụng trái non do sốc mặn). Bảo vệ vi sinh vật và ổn định SOC trước xâm nhập mặn.'
+        }
+    };
+    const waterRec = waterRecs[season];
+
+    const today = new Date().toLocaleDateString('vi-VN', { day: '2-digit', month: 'long', year: 'numeric' });
+    const farms = JSON.parse(localStorage.getItem('mrv_farms') || '[]');
+    const farmData = farms.find(f => f.name === farmName) || {};
+
+    const badgeColor = thCase === 'TH1' ? '#1e8449' : '#922b21';
+    const badgeText  = thCase === 'TH1' ? 'TĂNG BÓN' : 'GIẢM BÓN';
+
+    const html = `
+    <div id="rec-report-printable" style="font-family:Arial,sans-serif;color:#1a1a2e;background:#fff;padding:32px;border-radius:12px;border:1px solid var(--border);">
+
+        <!-- Header -->
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;border-bottom:3px solid #1e8449;padding-bottom:16px;margin-bottom:24px;">
+            <div>
+                <div style="display:flex;gap:8px;margin-bottom:8px;">
+                    <span style="background:#1a5276;color:white;padding:4px 10px;border-radius:4px;font-size:11px;font-weight:bold;">ExAS</span>
+                    <span style="background:#1e8449;color:white;padding:4px 10px;border-radius:4px;font-size:11px;font-weight:bold;">MRV</span>
+                </div>
+                <h1 style="font-size:20px;font-weight:bold;color:#1a5276;margin:0;">BÁO CÁO ĐỀ XUẤT CANH TÁC BỀN VỮNG</h1>
+                <p style="color:#555;font-size:12px;margin-top:4px;">Khung canh tác dừa bền vững — Chu kỳ 1 năm | VM0042 Verra</p>
+            </div>
+            <div style="text-align:right;font-size:11px;color:#777;">
+                <div>Ngày lập: <strong>${today}</strong></div>
+                <div>Hệ thống: ExAS MRV System</div>
+                <div style="margin-top:4px;background:${badgeColor};color:white;padding:4px 10px;border-radius:20px;font-size:11px;font-weight:bold;">${badgeText}</div>
+            </div>
+        </div>
+
+        <!-- Thông tin nông hộ -->
+        <h2 style="color:#1a5276;font-size:14px;border-bottom:1px solid #ddd;padding-bottom:6px;margin-bottom:12px;">1. THÔNG TIN NÔNG HỘ</h2>
+        <table style="width:100%;border-collapse:collapse;margin-bottom:20px;font-size:12px;">
+            <tr><td style="width:30%;background:#1a5276;color:white;padding:8px 12px;font-weight:bold;">Họ tên chủ hộ</td><td style="padding:8px 12px;border:1px solid #ddd;"><strong>${farmName}</strong></td>
+                <td style="width:30%;background:#1a5276;color:white;padding:8px 12px;font-weight:bold;">Mã nông hộ</td><td style="padding:8px 12px;border:1px solid #ddd;">${farmData.code || '--'}</td></tr>
+            <tr><td style="background:#1a5276;color:white;padding:8px 12px;font-weight:bold;">Địa chỉ</td><td colspan="3" style="padding:8px 12px;border:1px solid #ddd;">${farmData.address || '--'}</td></tr>
+            <tr><td style="background:#1a5276;color:white;padding:8px 12px;font-weight:bold;">Diện tích vườn</td><td style="padding:8px 12px;border:1px solid #ddd;">${area} ha</td>
+                <td style="background:#1a5276;color:white;padding:8px 12px;font-weight:bold;">Loại cây</td><td style="padding:8px 12px;border:1px solid #ddd;">${farmData.crop || 'Dừa'}</td></tr>
+            <tr><td style="background:#1a5276;color:white;padding:8px 12px;font-weight:bold;">Tuổi cây dừa</td><td style="padding:8px 12px;border:1px solid #ddd;">${farmData.treeAge || '--'} năm → <strong>${treeCat === 'non' ? 'Dừa non' : 'Dừa già'}</strong></td>
+                <td style="background:#1a5276;color:white;padding:8px 12px;font-weight:bold;">SĐT liên hệ</td><td style="padding:8px 12px;border:1px solid #ddd;">${farmData.phone || '--'}</td></tr>
+        </table>
+
+        <!-- Thực trạng khảo sát -->
+        <h2 style="color:#1a5276;font-size:14px;border-bottom:1px solid #ddd;padding-bottom:6px;margin-bottom:12px;">2. THỰC TRẠNG KHẢO SÁT</h2>
+        <table style="width:100%;border-collapse:collapse;margin-bottom:20px;font-size:12px;">
+            <thead><tr style="background:#1a5276;color:white;">
+                <th style="padding:8px 12px;text-align:left;">Hạng mục</th>
+                <th style="padding:8px 12px;text-align:left;">Thực trạng</th>
+            </tr></thead>
+            <tbody>
+                <tr style="background:#f8f9fa;"><td style="padding:8px 12px;border:1px solid #ddd;font-weight:bold;">Tần suất thu hoạch</td>
+                    <td style="padding:8px 12px;border:1px solid #ddd;">${harvests} lần/năm → <strong>${hCatLabels[hCat]}</strong></td></tr>
+                <tr><td style="padding:8px 12px;border:1px solid #ddd;font-weight:bold;">Phương pháp bón phân</td>
+                    <td style="padding:8px 12px;border:1px solid #ddd;">${methodLabels[fertMethod]}</td></tr>
+                <tr style="background:#f8f9fa;"><td style="padding:8px 12px;border:1px solid #ddd;font-weight:bold;">Lượng phân hiện tại</td>
+                    <td style="padding:8px 12px;border:1px solid #ddd;">${fertCurrent} kg/ha/lần</td></tr>
+                <tr><td style="padding:8px 12px;border:1px solid #ddd;font-weight:bold;">Độ pH đất</td>
+                    <td style="padding:8px 12px;border:1px solid #ddd;">${pH || 'Chưa đo'}</td></tr>
+                <tr style="background:#f8f9fa;"><td style="padding:8px 12px;border:1px solid #ddd;font-weight:bold;">Mùa vụ / Giai đoạn</td>
+                    <td style="padding:8px 12px;border:1px solid #ddd;">${seasonLabels[season]}</td></tr>
+            </tbody>
+        </table>
+
+        <!-- 1. Quản lý phân bón -->
+        <h2 style="color:#1a5276;font-size:14px;border-bottom:1px solid #ddd;padding-bottom:6px;margin-bottom:12px;">3. ĐỀ XUẤT CANH TÁC</h2>
+
+        <div style="background:#eaf4ea;border-left:4px solid #1e8449;padding:14px 16px;border-radius:0 8px 8px 0;margin-bottom:16px;">
+            <div style="font-weight:bold;color:#1e8449;margin-bottom:6px;font-size:13px;">3.1 QUẢN LÝ PHÂN BÓN</div>
+            <div style="font-size:12px;margin-bottom:6px;">
+                <strong>Tổ hợp:</strong> ${treeCat === 'non' ? 'Dừa non' : 'Dừa già'} + ${hCatLabels[hCat]} + ${methodLabels[fertMethod]}
+            </div>
+            <div style="font-size:13px;font-weight:bold;color:#1a5276;background:white;padding:10px 12px;border-radius:6px;">
+                📋 ${rec}
+            </div>
+        </div>
+
+        <div style="background:#eaf4ea;border-left:4px solid #1e8449;padding:14px 16px;border-radius:0 8px 8px 0;margin-bottom:16px;">
+            <div style="font-weight:bold;color:#1e8449;margin-bottom:6px;font-size:13px;">3.2 CẢI TẠO ĐẤT (VÔI / DOLOMITE)</div>
+            <div style="font-size:13px;font-weight:bold;color:#1a5276;background:white;padding:10px 12px;border-radius:6px;margin-bottom:6px;">
+                🪨 ${limeRec.dose}
+            </div>
+            <div style="font-size:12px;color:#555;">${limeRec.note}</div>
+            <div style="font-size:12px;color:#555;margin-top:4px;">Mục tiêu: Đất ổn định pH 5.5–7.0, độ ẩm 40-70%, hàm lượng hữu cơ > 2-3%.</div>
+        </div>
+
+        <div style="background:#eaf4ea;border-left:4px solid #1e8449;padding:14px 16px;border-radius:0 8px 8px 0;margin-bottom:16px;">
+            <div style="font-weight:bold;color:#1e8449;margin-bottom:6px;font-size:13px;">3.3 QUẢN LÝ NƯỚC TƯỚI — ${seasonLabels[season].toUpperCase()}</div>
+            <div style="font-size:13px;font-weight:bold;color:#1a5276;background:white;padding:10px 12px;border-radius:6px;margin-bottom:6px;">
+                💧 ${waterRec.action}
+            </div>
+            <div style="font-size:12px;color:#555;">${waterRec.detail}</div>
+        </div>
+
+        <div style="background:#eaf4ea;border-left:4px solid #1e8449;padding:14px 16px;border-radius:0 8px 8px 0;margin-bottom:20px;">
+            <div style="font-weight:bold;color:#1e8449;margin-bottom:6px;font-size:13px;">3.4 QUẢN LÝ TÀN DƯ SINH KHỐI</div>
+            <div style="font-size:12px;color:#333;line-height:1.7;">
+                • Để lại toàn bộ lá khô, bẹ dừa rụng trên mặt líp làm lớp phủ hữu cơ.<br>
+                • Bổ sung phân hữu cơ vi sinh (Axit Fulvic, Axit Humic) định kỳ 2 lần/năm để kích hoạt hệ vi sinh vật đất.<br>
+                • Hạn chế đốt tàn dư — chuyển sang ủ compost hoặc che phủ gốc.
+            </div>
+        </div>
+
+        <!-- Dự kiến kết quả -->
+        <h2 style="color:#1a5276;font-size:14px;border-bottom:1px solid #ddd;padding-bottom:6px;margin-bottom:12px;">4. DỰ KIẾN KẾT QUẢ (${outcome.title})</h2>
+        <table style="width:100%;border-collapse:collapse;margin-bottom:20px;font-size:12px;">
+            <thead><tr style="background:#1e8449;color:white;">
+                <th style="padding:10px 14px;text-align:left;width:35%;">Chỉ tiêu</th>
+                <th style="padding:10px 14px;text-align:left;">Kết quả dự kiến</th>
+            </tr></thead>
+            <tbody>
+                <tr style="background:#f8f9fa;"><td style="padding:10px 14px;border:1px solid #ddd;font-weight:bold;">Tàn dư sinh khối</td>
+                    <td style="padding:10px 14px;border:1px solid #ddd;">${outcome.biomass}</td></tr>
+                <tr><td style="padding:10px 14px;border:1px solid #ddd;font-weight:bold;">Lượng CO₂ giữ trong đất</td>
+                    <td style="padding:10px 14px;border:1px solid #ddd;">${outcome.co2}</td></tr>
+                <tr style="background:#f8f9fa;"><td style="padding:10px 14px;border:1px solid #ddd;font-weight:bold;">Cơ chế tác động</td>
+                    <td style="padding:10px 14px;border:1px solid #ddd;">${outcome.detail}</td></tr>
+                <tr><td style="padding:10px 14px;border:1px solid #ddd;font-weight:bold;">Nước tưới</td>
+                    <td style="padding:10px 14px;border:1px solid #ddd;">${waterRec.outcome}</td></tr>
+            </tbody>
+        </table>
+
+        <!-- Footer -->
+        <div style="border-top:2px solid #1e8449;padding-top:12px;display:flex;justify-content:space-between;font-size:11px;color:#777;">
+            <div>ExAS MRV System — Hệ thống Đo lường, Báo cáo & Xác minh</div>
+            <div>Phương pháp luận VM0042 — Verra VCS+CCB</div>
+            <div>${today}</div>
+        </div>
+    </div>`;
+
+    _recReportHtml = html;
+    const out = document.getElementById('recommend-output');
+    if (out) { out.style.display = 'block'; out.innerHTML = html; }
+}
+
+function printRecommendReport() {
+    if (!_recReportHtml) { generateRecommendReport(); }
+    const win = window.open('', '_blank');
+    win.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Báo cáo Đề xuất Canh tác</title>
+    <style>*{box-sizing:border-box;margin:0;padding:0;}body{font-family:Arial,sans-serif;background:#fff;color:#000;}
+    @media print{@page{size:A4;margin:15mm;}.no-print{display:none!important;}}</style></head>
+    <body>${_recReportHtml}<script>window.onload=()=>{window.print();}<\/script></body></html>`);
+    win.document.close();
+}
