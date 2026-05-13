@@ -8,12 +8,18 @@ function renderFarmDiary(container) {
         <div class="filter-bar">
             <div class="search-input">
                 <i class="fas fa-search"></i>
-                <input type="text" id="diary-search" placeholder="Tìm theo nông hộ...">
+                <input type="text" id="diary-search" placeholder="Tìm theo nông hộ, loại phân..." oninput="loadDiaryData()">
             </div>
-            <select id="diary-filter-farm">
+            <select id="diary-filter-farm" onchange="loadDiaryData()">
                 <option value="">Tất cả nông hộ</option>
             </select>
             <div style="flex:1;"></div>
+            <button class="btn btn-secondary" onclick="downloadDiaryTemplate()" style="border-color:var(--text-muted);color:var(--text-muted);">
+                <i class="fas fa-download"></i> Template
+            </button>
+            <button class="btn btn-secondary" onclick="openDiaryImportModal()" style="border-color:var(--info);color:var(--info);">
+                <i class="fas fa-file-upload"></i> Nhập từ file
+            </button>
             <button class="btn btn-primary" onclick="openDiaryModal()">
                 <i class="fas fa-plus"></i> Thêm nhật ký
             </button>
@@ -181,6 +187,69 @@ function renderFarmDiary(container) {
                 </div>
             </div>
         </div>
+
+        <!-- Import Modal -->
+        <div class="modal-overlay" id="diary-import-modal">
+            <div class="modal" style="max-width:820px;">
+                <div class="modal-header">
+                    <h3><i class="fas fa-file-upload" style="color:var(--info);margin-right:8px;"></i> Nhập nhật ký từ file</h3>
+                    <button class="modal-close" onclick="closeDiaryImportModal()"><i class="fas fa-times"></i></button>
+                </div>
+                <div class="modal-body">
+                    <div style="background:var(--bg-secondary);border-radius:8px;padding:12px;margin-bottom:16px;font-size:12px;">
+                        <div style="font-weight:600;margin-bottom:8px;color:var(--text-secondary);"><i class="fas fa-info-circle"></i> Cột hỗ trợ (CSV / Excel .xlsx) — nhận diện tự động theo tiêu đề</div>
+                        <div style="display:flex;flex-wrap:wrap;gap:6px;">
+                            <span style="background:var(--bg-card);border:1px solid var(--border);border-radius:4px;padding:2px 8px;">Ngày</span>
+                            <span style="background:var(--bg-card);border:1px solid var(--border);border-radius:4px;padding:2px 8px;">Mã NH</span>
+                            <span style="background:var(--bg-card);border:1px solid var(--border);border-radius:4px;padding:2px 8px;">Tên NH</span>
+                            <span style="background:var(--bg-card);border:1px solid var(--border);border-radius:4px;padding:2px 8px;">Loại cây</span>
+                            <span style="background:var(--bg-card);border:1px solid var(--border);border-radius:4px;padding:2px 8px;">Diện tích (ha)</span>
+                            <span style="background:var(--bg-card);border:1px solid var(--border);border-radius:4px;padding:2px 8px;">Loại phân</span>
+                            <span style="background:var(--bg-card);border:1px solid var(--border);border-radius:4px;padding:2px 8px;">Loại N (FSN/FON)</span>
+                            <span style="background:var(--bg-card);border:1px solid var(--border);border-radius:4px;padding:2px 8px;">Lượng phân (kg)</span>
+                            <span style="background:var(--bg-card);border:1px solid var(--border);border-radius:4px;padding:2px 8px;">Hàm lượng N (%)</span>
+                            <span style="background:var(--bg-card);border:1px solid var(--border);border-radius:4px;padding:2px 8px;">Vôi (tấn)</span>
+                            <span style="background:var(--bg-card);border:1px solid var(--border);border-radius:4px;padding:2px 8px;">Dolomite (tấn)</span>
+                            <span style="background:var(--bg-card);border:1px solid var(--border);border-radius:4px;padding:2px 8px;">Loại nhiên liệu</span>
+                            <span style="background:var(--bg-card);border:1px solid var(--border);border-radius:4px;padding:2px 8px;">Nhiên liệu (lít)</span>
+                            <span style="background:var(--bg-card);border:1px solid var(--border);border-radius:4px;padding:2px 8px;">Ghi chú</span>
+                        </div>
+                    </div>
+                    <div id="diary-drop-zone" style="border:2px dashed var(--info);border-radius:10px;padding:32px;text-align:center;cursor:pointer;transition:background .2s;"
+                         onclick="document.getElementById('diary-file-input').click()"
+                         ondragover="event.preventDefault();this.style.background='var(--bg-secondary)'"
+                         ondragleave="this.style.background=''"
+                         ondrop="event.preventDefault();this.style.background='';handleDiaryFileUpload(event.dataTransfer.files[0])">
+                        <i class="fas fa-cloud-upload-alt" style="font-size:32px;color:var(--info);margin-bottom:8px;display:block;"></i>
+                        <p style="margin:0;color:var(--text-secondary);">Kéo thả file CSV / Excel vào đây hoặc <strong style="color:var(--info);">chọn file</strong></p>
+                        <p style="margin:4px 0 0;font-size:11px;color:var(--text-muted);">Hỗ trợ .csv, .xlsx, .xls</p>
+                        <input type="file" id="diary-file-input" accept=".csv,.xlsx,.xls" style="display:none" onchange="handleDiaryFileUpload(this.files[0])">
+                    </div>
+                    <div id="diary-import-preview" style="margin-top:16px;display:none;">
+                        <div style="font-weight:600;margin-bottom:8px;color:var(--text-secondary);font-size:13px;">
+                            <i class="fas fa-table"></i> Xem trước — <span id="diary-import-count">0</span> dòng hợp lệ
+                        </div>
+                        <div class="table-wrapper" style="max-height:280px;overflow-y:auto;">
+                            <table class="data-table" style="font-size:12px;">
+                                <thead><tr>
+                                    <th>Ngày</th><th>Nông hộ</th><th>Loại cây</th>
+                                    <th>Loại phân / N</th><th>Lượng (kg)</th><th>N (kg)</th>
+                                    <th>Vôi</th><th>Dolomite</th><th>Nhiên liệu</th><th>Ha</th><th>Ghi chú</th>
+                                </tr></thead>
+                                <tbody id="diary-import-preview-body"></tbody>
+                            </table>
+                        </div>
+                        <div id="diary-import-errors" style="margin-top:8px;font-size:12px;color:var(--danger);"></div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" onclick="downloadDiaryTemplate()"><i class="fas fa-download"></i> Template</button>
+                    <div style="flex:1;"></div>
+                    <button class="btn btn-secondary" onclick="closeDiaryImportModal()">Hủy</button>
+                    <button class="btn btn-primary" id="diary-import-confirm-btn" onclick="confirmDiaryImport()" style="display:none;"><i class="fas fa-check"></i> Nhập dữ liệu</button>
+                </div>
+            </div>
+        </div>
     `;
     const dateInput = document.getElementById('diary-date');
     if (dateInput) dateInput.valueAsDate = new Date();
@@ -259,6 +328,12 @@ function calcDiaryNKg() {
 }
 
 function openDiaryModal() {
+    const farmSel = document.getElementById('diary-farm');
+    if (farmSel) {
+        const farms = JSON.parse(localStorage.getItem('mrv_farms') || '[]');
+        farmSel.innerHTML = '<option value="">Chọn nông hộ</option>' +
+            farms.map(f => `<option value="${f.name}">[${f.code}] ${f.name}</option>`).join('');
+    }
     document.getElementById('diary-modal').classList.add('show');
 }
 
@@ -318,9 +393,244 @@ function deleteDiary(id) {
     addAuditEntry('Xóa nhật ký canh tác', `ID: ${id}`, 'red');
 }
 
+// ===== DIARY IMPORT =====
+let _diaryImportRows = [];
+
+function openDiaryImportModal() {
+    _diaryImportRows = [];
+    const preview = document.getElementById('diary-import-preview');
+    if (preview) preview.style.display = 'none';
+    const btn = document.getElementById('diary-import-confirm-btn');
+    if (btn) btn.style.display = 'none';
+    const fi = document.getElementById('diary-file-input');
+    if (fi) fi.value = '';
+    document.getElementById('diary-import-modal').classList.add('show');
+}
+
+function closeDiaryImportModal() {
+    document.getElementById('diary-import-modal').classList.remove('show');
+}
+
+function downloadDiaryTemplate() {
+    const rows = [
+        ['Ngay', 'Ma NH', 'Ten NH', 'Loai cay', 'Dien tich (ha)', 'Loai phan', 'Loai N (FSN/FON)', 'Luong phan (kg)', 'Ham luong N (%)', 'Voi (tan)', 'Dolomite (tan)', 'Loai nhien lieu', 'Nhien lieu (lit)', 'Ghi chu'],
+        ['2024-03-15', 'NH001', 'Tran Minh Quang', 'Dua Lun PB121', '4.6', 'Phan NPK 16-8-16', 'FSN', '616.4', '16', '1.15', '0', 'diesel', '20', 'Bon lan 1 dau mua'],
+        ['2024-06-20', 'NH001', 'Tran Minh Quang', 'Dua Lun PB121', '4.6', 'Phan huu co', 'FON', '200', '3', '0', '1.15', 'diesel', '18', 'Bon lan 2 mua mua'],
+    ];
+    const csv = rows.map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(',')).join('\n');
+    const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'template_nhat_ky_canh_tac.csv';
+    a.click();
+}
+
+function normalizeDiaryHeader(h) {
+    return String(h).toLowerCase()
+        .normalize('NFD').replace(/[̀-ͯ]/g, '')
+        .replace(/đ/g, 'd').replace(/[^a-z0-9]/g, ' ').trim().replace(/\s+/g, ' ');
+}
+
+function mapDiaryHeader(headers) {
+    const map = {};
+    headers.forEach((h, i) => {
+        const n = normalizeDiaryHeader(h);
+        if (n.match(/^ngay/) || n === 'date') { map.date = i; return; }
+        if ((n.includes('ma') && (n.includes('nh') || n.includes('nong'))) || n === 'ma nh' || n === 'farm code') { map.code = i; return; }
+        if ((n.includes('ten') || n.startsWith('nong ho')) && !n.includes('loai')) { map.name = i; return; }
+        if (n.includes('loai cay') || n.includes('cay trong') || n === 'crop') { map.crop = i; return; }
+        if (n.includes('dien tich') || n === 'ha' || n === 'area') { map.area = i; return; }
+        if (n.includes('loai phan') || n.includes('phan bon') || n === 'fertilizer') { map.fertilizerType = i; return; }
+        if (n.includes('loai n') || n.includes('n category') || n === 'fsn fon') { map.nCategory = i; return; }
+        if (n.includes('luong phan') || n.includes('fert amount')) { map.fertilizerAmount = i; return; }
+        if (n.includes('ham luong n') || n.includes('n %') || n === 'n percent' || n.match(/^n\b.*phan tram/)) { map.nPercent = i; return; }
+        if (n.includes('voi') || n.includes('limestone')) { map.limestone = i; return; }
+        if (n.includes('dolomite')) { map.dolomite = i; return; }
+        if (n.includes('loai nhien lieu') || n === 'fuel type') { map.fuelType = i; return; }
+        if ((n.includes('nhien lieu') || n === 'fuel') && !n.includes('loai')) { map.fuel = i; return; }
+        if (n.includes('ghi chu') || n.includes('note') || n.includes('comment')) { map.notes = i; return; }
+    });
+    return map;
+}
+
+function resolveFarmFromDiary(s, farms) {
+    if (!s) return null;
+    const str = String(s).trim();
+    if (!str) return null;
+    let f = farms.find(x => x.code && x.code.trim().toUpperCase() === str.toUpperCase());
+    if (f) return f;
+    f = farms.find(x => x.name && x.name.trim().toLowerCase() === str.toLowerCase());
+    if (f) return f;
+    f = farms.find(x => x.code && str.toUpperCase().includes(x.code.toUpperCase()));
+    return f || null;
+}
+
+function parseRowToDiary(row, map, farms) {
+    const pf = k => map[k] !== undefined ? String(row[map[k]] ?? '').trim() : '';
+    const pn = k => parseFloat(String(row[map[k]] ?? '').replace(',', '.')) || 0;
+
+    const dateRaw = pf('date');
+    if (!dateRaw) return null;
+
+    // Resolve farm by code then name
+    const resolved = resolveFarmFromDiary(pf('code'), farms) || resolveFarmFromDiary(pf('name'), farms);
+    const farmName = resolved ? resolved.name : (pf('name') || pf('code') || 'Chưa xác định');
+
+    // Parse date: YYYY-MM-DD, DD/MM/YYYY, or Excel serial
+    let date = dateRaw;
+    if (dateRaw.match(/^\d{1,2}\/\d{1,2}\/\d{4}$/)) {
+        const p = dateRaw.split('/');
+        date = `${p[2]}-${p[1].padStart(2,'0')}-${p[0].padStart(2,'0')}`;
+    } else if (map.date !== undefined && typeof row[map.date] === 'number' && row[map.date] > 10000) {
+        const d = new Date((row[map.date] - 25569) * 86400000);
+        date = d.toISOString().slice(0, 10);
+    }
+
+    const fertAmount = pn('fertilizerAmount');
+    const nPct = pn('nPercent');
+    const nKg = parseFloat((fertAmount * nPct / 100).toFixed(3));
+
+    const nCatRaw = pf('nCategory').toUpperCase();
+    const nCategory = nCatRaw.includes('FSN') ? 'FSN' : nCatRaw.includes('FON') ? 'FON' : nCatRaw.includes('NONE') || nCatRaw.includes('KHONG') ? 'none' : '';
+
+    const fuelRaw = pf('fuelType').toLowerCase();
+    const fuelType = fuelRaw.includes('diesel') ? 'diesel'
+        : (fuelRaw.includes('xang') || fuelRaw.includes('petrol') || fuelRaw.includes('gasoline')) ? 'petrol'
+        : fuelRaw.includes('lpg') ? 'lpg' : '';
+
+    const area = pn('area') || (resolved && resolved.area ? resolved.area : 0);
+
+    return {
+        date, farm: farmName, crop: pf('crop'), area,
+        fertilizerType: pf('fertilizerType'),
+        nCategory, fertilizerAmount: fertAmount, nPercent: nPct, nKg,
+        limestone: pn('limestone'), dolomite: pn('dolomite'),
+        fuelType, fuel: pn('fuel'),
+        water: 0, waste: '',
+        notes: pf('notes'),
+        recorder: currentUser.name,
+        createdAt: new Date().toISOString()
+    };
+}
+
+function parseDiaryCSV(text) {
+    return text.replace(/\r\n/g, '\n').replace(/\r/g, '\n').trim().split('\n').map(line => {
+        const cells = [];
+        let cur = '', inQuote = false;
+        for (let i = 0; i < line.length; i++) {
+            const ch = line[i];
+            if (ch === '"') {
+                if (inQuote && line[i + 1] === '"') { cur += '"'; i++; }
+                else inQuote = !inQuote;
+            } else if (ch === ',' && !inQuote) {
+                cells.push(cur.trim()); cur = '';
+            } else { cur += ch; }
+        }
+        cells.push(cur.trim());
+        return cells;
+    });
+}
+
+function processDiaryRows(aoa) {
+    if (!aoa || aoa.length < 2) { alert('File không có dữ liệu hoặc thiếu dòng tiêu đề.'); return; }
+    const farms = JSON.parse(localStorage.getItem('mrv_farms') || '[]');
+    const map = mapDiaryHeader(aoa[0]);
+
+    _diaryImportRows = [];
+    const errors = [];
+    for (let i = 1; i < aoa.length; i++) {
+        const row = aoa[i];
+        if (!row || row.every(c => !c)) continue;
+        try {
+            const entry = parseRowToDiary(row, map, farms);
+            if (entry) _diaryImportRows.push(entry);
+            else errors.push(`Dòng ${i + 1}: Thiếu ngày`);
+        } catch (err) {
+            errors.push(`Dòng ${i + 1}: ${err.message}`);
+        }
+    }
+
+    const countEl = document.getElementById('diary-import-count');
+    const tbody = document.getElementById('diary-import-preview-body');
+    const errEl = document.getElementById('diary-import-errors');
+    const preview = document.getElementById('diary-import-preview');
+    const btn = document.getElementById('diary-import-confirm-btn');
+
+    if (countEl) countEl.textContent = _diaryImportRows.length;
+    if (tbody) tbody.innerHTML = _diaryImportRows.map(e => {
+        const nBadge = e.nCategory === 'FSN' ? '<span class="badge badge-orange">FSN</span>'
+            : e.nCategory === 'FON' ? '<span class="badge badge-green">FON</span>' : '';
+        const fl = { diesel: 'Diesel', petrol: 'Xăng', lpg: 'LPG' }[e.fuelType] || '--';
+        return `<tr>
+            <td>${e.date}</td><td>${e.farm}</td><td>${e.crop || '--'}</td>
+            <td>${e.fertilizerType || '--'} ${nBadge}</td>
+            <td>${e.fertilizerAmount > 0 ? e.fertilizerAmount : '--'}</td>
+            <td>${e.nKg > 0 ? e.nKg + ' kg' : '--'}</td>
+            <td>${e.limestone > 0 ? e.limestone : '--'}</td>
+            <td>${e.dolomite > 0 ? e.dolomite : '--'}</td>
+            <td>${e.fuel > 0 ? fl + ' ' + e.fuel + 'L' : '--'}</td>
+            <td>${e.area > 0 ? e.area : '--'}</td>
+            <td>${e.notes || '--'}</td>
+        </tr>`;
+    }).join('');
+    if (errEl) errEl.innerHTML = errors.length
+        ? `<i class="fas fa-exclamation-triangle"></i> ${errors.length} dòng lỗi: ${errors.slice(0, 3).join(' | ')}${errors.length > 3 ? '...' : ''}`
+        : '';
+    if (preview) preview.style.display = 'block';
+    if (btn) btn.style.display = _diaryImportRows.length > 0 ? '' : 'none';
+}
+
+function handleDiaryFileUpload(file) {
+    if (!file) return;
+    const name = file.name.toLowerCase();
+    const reader = new FileReader();
+    if (name.endsWith('.csv')) {
+        reader.onload = e => processDiaryRows(parseDiaryCSV(e.target.result));
+        reader.readAsText(file, 'UTF-8');
+    } else if (name.endsWith('.xlsx') || name.endsWith('.xls')) {
+        reader.onload = e => {
+            if (typeof XLSX === 'undefined') { alert('Thư viện XLSX chưa được tải. Vui lòng dùng file CSV.'); return; }
+            const wb = XLSX.read(e.target.result, { type: 'binary' });
+            const ws = wb.Sheets[wb.SheetNames[0]];
+            processDiaryRows(XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' }));
+        };
+        reader.readAsBinaryString(file);
+    } else {
+        alert('Chỉ hỗ trợ file CSV hoặc Excel (.xlsx, .xls)');
+    }
+}
+
+function confirmDiaryImport() {
+    if (!_diaryImportRows.length) return;
+    const existing = JSON.parse(localStorage.getItem('mrv_diaries') || '[]');
+    const ts = Date.now();
+    const newRows = _diaryImportRows.map((r, i) => ({ ...r, id: ts + i }));
+    const merged = [...existing, ...newRows];
+    localStorage.setItem('mrv_diaries', JSON.stringify(merged));
+    diaryEntries = merged;
+    closeDiaryImportModal();
+    loadDiaryData();
+    addAuditEntry(
+        'Nhập nhật ký từ file',
+        `${newRows.length} dòng — nông hộ: ${[...new Set(newRows.map(r => r.farm))].join(', ')}`,
+        'blue'
+    );
+    _diaryImportRows = [];
+}
+
 function loadDiaryData() {
+    // Populate farm filter dropdown
+    const farmFilter = document.getElementById('diary-filter-farm');
+    if (farmFilter) {
+        const farmNames = [...new Set(diaryEntries.map(e => e.farm))].sort();
+        const cur = farmFilter.value;
+        farmFilter.innerHTML = '<option value="">Tất cả nông hộ</option>' +
+            farmNames.map(f => `<option value="${f}" ${f === cur ? 'selected' : ''}>${f}</option>`).join('');
+    }
+
     const tbody = document.getElementById('diary-table-body');
     if (!tbody) return;
+
     if (diaryEntries.length === 0) {
         tbody.innerHTML = `<tr><td colspan="12"><div class="empty-state">
             <i class="fas fa-book-open"></i>
@@ -331,7 +641,24 @@ function loadDiaryData() {
         </div></td></tr>`;
         return;
     }
-    tbody.innerHTML = diaryEntries.map(e => {
+
+    const search = (document.getElementById('diary-search')?.value || '').toLowerCase();
+    const filterFarm = document.getElementById('diary-filter-farm')?.value || '';
+    let entries = diaryEntries.slice().sort((a, b) => b.date.localeCompare(a.date));
+    if (filterFarm) entries = entries.filter(e => e.farm === filterFarm);
+    if (search) entries = entries.filter(e =>
+        (e.farm || '').toLowerCase().includes(search) ||
+        (e.fertilizerType || '').toLowerCase().includes(search) ||
+        (e.crop || '').toLowerCase().includes(search) ||
+        (e.notes || '').toLowerCase().includes(search)
+    );
+
+    if (entries.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="12"><div class="empty-state"><i class="fas fa-search"></i><p>Không tìm thấy kết quả</p></div></td></tr>`;
+        return;
+    }
+
+    tbody.innerHTML = entries.map(e => {
         const nBadge = e.nCategory === 'FSN'
             ? '<span class="badge badge-orange">FSN</span>'
             : e.nCategory === 'FON'
