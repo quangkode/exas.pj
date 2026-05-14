@@ -483,15 +483,15 @@ function resolveFarmFromDiary(s, farms) {
     return f || null;
 }
 
-function parseRowToDiary(row, map, farms) {
+function parseRowToDiary(row, map, farms, defaultFarm) {
     const pf = k => map[k] !== undefined ? String(row[map[k]] ?? '').trim() : '';
     const pn = k => parseFloat(String(row[map[k]] ?? '').replace(',', '.')) || 0;
 
     const dateRaw = pf('date');
     if (!dateRaw) return null;
 
-    // Resolve farm by code then name
-    const resolved = resolveFarmFromDiary(pf('code'), farms) || resolveFarmFromDiary(pf('name'), farms);
+    // Resolve farm by code then name from row, fallback to defaultFarm extracted from file header
+    const resolved = resolveFarmFromDiary(pf('code'), farms) || resolveFarmFromDiary(pf('name'), farms) || defaultFarm;
     const farmName = resolved ? resolved.name : (pf('name') || pf('code') || 'Chưa xác định');
 
     // Parse date: YYYY-MM-DD, DD/MM/YYYY, or Excel serial
@@ -552,15 +552,40 @@ function parseDiaryCSV(text) {
 function processDiaryRows(aoa) {
     if (!aoa || aoa.length < 2) { alert('File không có dữ liệu hoặc thiếu dòng tiêu đề.'); return; }
     const farms = JSON.parse(localStorage.getItem('mrv_farms') || '[]');
-    const map = mapDiaryHeader(aoa[0]);
+    let headerIdx = 0;
+    for (let i = 0; i < Math.min(10, aoa.length); i++) {
+        const m = mapDiaryHeader(aoa[i]);
+        if (m.date !== undefined) { headerIdx = i; break; }
+    }
+    const map = mapDiaryHeader(aoa[headerIdx]);
+
+    // Extract farm from title rows (rows before the header)
+    let defaultFarm = null;
+    if (headerIdx > 0) {
+        const titleText = aoa.slice(0, headerIdx).map(r => (r || []).join(' ')).join(' ');
+        // Try to match known farm codes first
+        for (const f of farms) {
+            if (f.code && titleText.toUpperCase().includes(f.code.toUpperCase())) {
+                defaultFarm = f; break;
+            }
+        }
+        // Fallback: try to match farm names
+        if (!defaultFarm) {
+            for (const f of farms) {
+                if (f.name && titleText.toLowerCase().includes(f.name.toLowerCase())) {
+                    defaultFarm = f; break;
+                }
+            }
+        }
+    }
 
     _diaryImportRows = [];
     const errors = [];
-    for (let i = 1; i < aoa.length; i++) {
+    for (let i = headerIdx + 1; i < aoa.length; i++) {
         const row = aoa[i];
         if (!row || row.every(c => !c)) continue;
         try {
-            const entry = parseRowToDiary(row, map, farms);
+            const entry = parseRowToDiary(row, map, farms, defaultFarm);
             if (entry) _diaryImportRows.push(entry);
             else errors.push(`Dòng ${i + 1}: Thiếu ngày`);
         } catch (err) {
