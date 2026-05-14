@@ -19,12 +19,24 @@ window.firebaseReady = (async function initFirebaseSync() {
         firebase.initializeApp(FIREBASE_CONFIG);
         _db = firebase.firestore();
 
-        // Load tất cả data từ Firestore vào localStorage
+        // Sync 2 chiều: Firestore → localStorage (nếu có), localStorage → Firestore (nếu Firestore chưa có)
         await Promise.all(MRV_SYNC_KEYS.map(async key => {
             try {
                 const snap = await _db.collection('mrv_data').doc(key).get();
                 if (snap.exists && snap.data().value) {
+                    // Firestore có data → ghi vào localStorage
                     window._originalSetItem(key, snap.data().value);
+                } else {
+                    // Firestore chưa có → upload từ localStorage lên (nếu có data thật)
+                    const local = localStorage.getItem(key);
+                    if (local) {
+                        const parsed = JSON.parse(local);
+                        if (Array.isArray(parsed) && parsed.length > 0) {
+                            await _db.collection('mrv_data').doc(key)
+                                .set({ value: local, updatedAt: new Date().toISOString() })
+                                .catch(() => {});
+                        }
+                    }
                 }
             } catch(e) {}
         }));
