@@ -1259,9 +1259,12 @@ function runDialecticalAnalysis() {
     const body = document.getElementById('dialectical-analysis-body');
     if (!body) return;
 
-    const farms   = JSON.parse(localStorage.getItem('mrv_farms')   || '[]');
-    const diaries = JSON.parse(localStorage.getItem('mrv_diaries') || '[]');
-    const soc     = JSON.parse(localStorage.getItem('mrv_soc')     || '[]');
+    const farms    = JSON.parse(localStorage.getItem('mrv_farms')   || '[]');
+    const farmFilter = document.getElementById('soc-farm-filter')?.value || '';
+    const allDiaries = JSON.parse(localStorage.getItem('mrv_diaries') || '[]');
+    const allSoc     = JSON.parse(localStorage.getItem('mrv_soc')     || '[]');
+    const diaries = farmFilter ? allDiaries.filter(e => matchesFarm(e, farmFilter, farms)) : allDiaries;
+    const soc     = farmFilter ? allSoc.filter(e => matchesFarm(e, farmFilter, farms)) : allSoc;
 
     if (!soc.length && !diaries.length) {
         body.innerHTML = '<div class="empty-state" style="padding:24px;"><i class="fas fa-info-circle"></i><p>Cần có dữ liệu SOC và nhật ký canh tác để phân tích.</p></div>';
@@ -1291,7 +1294,8 @@ function runDialecticalAnalysis() {
     const deltaSOC = avgEndSOC - avgBeginSOC;
 
     // --- Variable 3: Fertilizer carbon emissions ---
-    const totalArea = farms.reduce((s, f) => s + (parseFloat(f.area) || 0), 0) || 4.6;
+    const filteredFarms = farmFilter ? farms.filter(f => f.code === farmFilter || f.name === farmFilter) : farms;
+    const totalArea = (filteredFarms.length > 0 ? filteredFarms : farms).reduce((s, f) => s + (parseFloat(f.area) || 0), 0) || 4.6;
     const totalN    = diaries.reduce((s, d) => s + (parseFloat(d.nKg) || 0), 0);
     const totalLimestoneT = diaries.reduce((s, d) => s + (parseFloat(d.limestone) || 0), 0);
     const totalDolomiteT  = diaries.reduce((s, d) => s + (parseFloat(d.dolomite)  || 0), 0);

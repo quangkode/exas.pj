@@ -60,6 +60,12 @@ function renderReports(container) {
                             <input type="text" id="rpt-prepared-by" placeholder="Tổ chức / cá nhân" value="ExAS MRV System">
                         </div>
                     </div>
+                    <div class="form-group" style="margin-bottom:12px;">
+                        <label>Lọc theo nông hộ</label>
+                        <select id="rpt-pdf-farm">
+                            <option value="">Tất cả nông hộ</option>
+                        </select>
+                    </div>
                     <button class="btn btn-primary" style="width:100%;" onclick="generateReport()">
                         <i class="fas fa-print"></i> Xuất PDF / In báo cáo
                     </button>
@@ -122,8 +128,10 @@ function renderReports(container) {
 
 /* ===== DATA HELPERS ===== */
 
-function getReportEmissionData() {
-    const diaries = JSON.parse(localStorage.getItem('mrv_diaries') || '[]');
+function getReportEmissionData(farmFilter) {
+    const allDiaries = JSON.parse(localStorage.getItem('mrv_diaries') || '[]');
+    const farmsList = JSON.parse(localStorage.getItem('mrv_farms') || '[]');
+    const diaries = farmFilter ? allDiaries.filter(e => matchesFarm(e, farmFilter, farmsList)) : allDiaries;
 
     let fuelDiesel = 0, fuelPetrol = 0, fuelLpg = 0;
     let limestone = 0, dolomite = 0, fsn = 0, fon = 0, maxArea = 1;
@@ -147,8 +155,10 @@ function getReportEmissionData() {
     return { eff, el, n2o, totalProject, fuelDiesel, fuelPetrol, fuelLpg, limestone, dolomite, fsn, fon, maxArea };
 }
 
-function getSOCChangeSummary() {
-    const socData = JSON.parse(localStorage.getItem('mrv_soc') || '[]');
+function getSOCChangeSummary(farmFilter) {
+    const allSocData = JSON.parse(localStorage.getItem('mrv_soc') || '[]');
+    const farmsList = JSON.parse(localStorage.getItem('mrv_farms') || '[]');
+    const socData = farmFilter ? allSocData.filter(e => matchesFarm(e, farmFilter, farmsList)) : allSocData;
     const endSamples = socData.filter(e => !e.isBeginning && e.socMassVM0042);
     const beginSamples = socData.filter(e => e.isBeginning && e.socMassVM0042);
     const avgEnd = endSamples.length > 0 ? endSamples.reduce((s, e) => s + parseFloat(e.socMassVM0042), 0) / endSamples.length : 0;
@@ -170,8 +180,11 @@ function loadReportStats() {
 
     // Populate farm filter for CSV
     const farms = [...new Set(diaries.map(e => e.farm))].filter(Boolean);
+    const farmOptions = '<option value="">Tất cả nông hộ</option>' + farms.map(f => `<option value="${f}">${f}</option>`).join('');
     const sel = document.getElementById('rpt-csv-farm');
-    if (sel) sel.innerHTML = '<option value="">Tất cả nông hộ</option>' + farms.map(f => `<option value="${f}">${f}</option>`).join('');
+    if (sel) sel.innerHTML = farmOptions;
+    const selPdf = document.getElementById('rpt-pdf-farm');
+    if (selPdf) selPdf.innerHTML = farmOptions;
 
     // GHG preview table
     const socSum = getSOCChangeSummary();
@@ -219,10 +232,14 @@ function generateReport() {
     const today = new Date().toLocaleDateString('vi-VN', { day: '2-digit', month: 'long', year: 'numeric' });
     const todayShort = new Date().toISOString().slice(0, 10);
 
-    const em = getReportEmissionData();
-    const soc = getSOCChangeSummary();
-    const diaries = JSON.parse(localStorage.getItem('mrv_diaries') || '[]');
-    const socData = JSON.parse(localStorage.getItem('mrv_soc') || '[]');
+    const farmFilter = document.getElementById('rpt-pdf-farm')?.value || '';
+    const farmsList = JSON.parse(localStorage.getItem('mrv_farms') || '[]');
+    const em = getReportEmissionData(farmFilter);
+    const soc = getSOCChangeSummary(farmFilter);
+    const allDiaries = JSON.parse(localStorage.getItem('mrv_diaries') || '[]');
+    const allSocData = JSON.parse(localStorage.getItem('mrv_soc') || '[]');
+    const diaries = farmFilter ? allDiaries.filter(e => matchesFarm(e, farmFilter, farmsList)) : allDiaries;
+    const socData = farmFilter ? allSocData.filter(e => matchesFarm(e, farmFilter, farmsList)) : allSocData;
 
     const reportTitle = reportType === 'verification' ? 'BÁO CÁO XÁC MINH' : 'BÁO CÁO GIÁM SÁT';
     const reportSubtitle = 'VCS Phiên bản 4, Phương pháp luận VM0042';
