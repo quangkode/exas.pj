@@ -224,8 +224,8 @@ function generateReport() {
     const diaries = JSON.parse(localStorage.getItem('mrv_diaries') || '[]');
     const socData = JSON.parse(localStorage.getItem('mrv_soc') || '[]');
 
-    const reportTitle = reportType === 'verification' ? 'VERIFICATION REPORT' : 'MONITORING REPORT';
-    const reportSubtitle = 'VCS Version 4, VM0042 Methodology';
+    const reportTitle = reportType === 'verification' ? 'BÁO CÁO XÁC MINH' : 'BÁO CÁO GIÁM SÁT';
+    const reportSubtitle = 'VCS Phiên bản 4, Phương pháp luận VM0042';
 
     const html = `<!DOCTYPE html>
 <html lang="vi">
@@ -324,19 +324,19 @@ function generateReport() {
   </div>
 
   <table class="meta-table">
-    <tr><td>Project Title</td><td>${projectName}</td></tr>
-    <tr><td>Report Title</td><td>${reportTitle} — ${reportPeriod}</td></tr>
-    <tr><td>Version</td><td>v1.0</td></tr>
-    <tr><td>Report ID</td><td>EXAS-${todayShort.replace(/-/g,'')}-001</td></tr>
-    <tr><td>Date of Issue</td><td>${today}</td></tr>
-    <tr><td>Prepared By</td><td>${preparedBy}</td></tr>
-    <tr><td>Reporting Period</td><td>${reportPeriod}</td></tr>
-    <tr><td>Methodology</td><td>VM0042 — Verra VCS Version 4</td></tr>
-    <tr><td>Pages</td><td>Auto-generated</td></tr>
+    <tr><td>Tên dự án</td><td>${projectName}</td></tr>
+    <tr><td>Tiêu đề báo cáo</td><td>${reportTitle} — ${reportPeriod}</td></tr>
+    <tr><td>Phiên bản</td><td>v1.0</td></tr>
+    <tr><td>Mã báo cáo</td><td>EXAS-${todayShort.replace(/-/g,'')}-001</td></tr>
+    <tr><td>Ngày phát hành</td><td>${today}</td></tr>
+    <tr><td>Người lập</td><td>${preparedBy}</td></tr>
+    <tr><td>Kỳ báo cáo</td><td>${reportPeriod}</td></tr>
+    <tr><td>Phương pháp luận</td><td>VM0042 — Verra VCS Version 4</td></tr>
+    <tr><td>Trang</td><td>Tự động tạo</td></tr>
   </table>
 
   <!-- SUMMARY -->
-  <h2 class="section">Summary</h2>
+  <h2 class="section">Tóm tắt</h2>
   <div class="summary-box">
     <strong>Mô tả dự án:</strong> ${projectName} áp dụng phương pháp luận VM0042 của Verra để đo lường và giám sát sự thay đổi trữ lượng carbon hữu cơ trong đất (SOC) và phát thải khí nhà kính từ hoạt động canh tác nông nghiệp.<br><br>
     <strong>Kỳ giám sát:</strong> ${reportPeriod}<br>
@@ -353,27 +353,27 @@ function generateReport() {
     <div class="header-title"><h1>${reportTitle}</h1><p>${reportSubtitle}</p></div>
   </div>
 
-  <h2 class="section">8 — Quantification of GHG Emission Reductions and Removals</h2>
+  <h2 class="section">8 — Định lượng Giảm/Loại bỏ phát thải KNK</h2>
 
   <p style="color:#555;font-style:italic;margin-bottom:12px;">
-    Reporting period: ${reportPeriod} &nbsp;|&nbsp; Date: ${today}
+    Kỳ báo cáo: ${reportPeriod} &nbsp;|&nbsp; Ngày: ${today}
   </p>
 
-  <p style="margin-bottom:8px;font-weight:bold;">Verified GHG emission reductions or removals in the above reporting period:</p>
+  <p style="margin-bottom:8px;font-weight:bold;">Giảm/loại bỏ phát thải KNK đã xác minh trong kỳ báo cáo nêu trên:</p>
 
   <table class="ghg-table">
     <thead>
-      <tr><th>GHG Emission Reductions or Removals</th><th style="text-align:right;">tCO₂e</th><th>Ghi chú</th></tr>
+      <tr><th>Giảm/Loại bỏ phát thải KNK</th><th style="text-align:right;">tCO₂e</th><th>Ghi chú</th></tr>
     </thead>
     <tbody>
-      <tr><td>Baseline Emissions</td><td>—</td><td style="font-size:9pt;color:#888;">Chưa thiết lập đường cơ sở</td></tr>
-      <tr><td><strong>Project Emissions (tổng)</strong></td><td>${em.totalProject.toFixed(4)}</td><td style="font-size:9pt;">EFF + EL</td></tr>
+      <tr><td>Phát thải đường cơ sở</td><td>—</td><td style="font-size:9pt;color:#888;">Chưa thiết lập đường cơ sở</td></tr>
+      <tr><td><strong>Phát thải dự án (tổng)</strong></td><td>${em.totalProject.toFixed(4)}</td><td style="font-size:9pt;">EFF + EL</td></tr>
       <tr class="sub"><td>→ EFF — Nhiên liệu hóa thạch</td><td>${em.eff.toFixed(4)}</td><td style="font-size:9pt;">FFC × EF_CO₂ (IPCC)</td></tr>
       <tr class="sub"><td>→ EL — Bón vôi/Dolomite</td><td>${em.el.toFixed(4)}</td><td style="font-size:9pt;">((M_lime×0.12)+(M_dolo×0.13))×44/12</td></tr>
       <tr class="sub"><td>→ N₂O_fert — Phân bón</td><td>${em.n2o.toFixed(4)} /ha</td><td style="font-size:9pt;">(FSN+FON)×EF×44/28×GWP/1000/A</td></tr>
-      <tr><td>Leakage</td><td>—</td><td style="font-size:9pt;color:#888;">Chưa tính</td></tr>
-      <tr><td><strong>ΔCO₂_soil — SOC Change (VM0042)</strong></td><td style="color:${soc.delta >= 0 ? '#1e8449' : '#e74c3c'};">${soc.delta.toFixed(4)}</td><td style="font-size:9pt;">tC/ha (${soc.totalSamples} mẫu)</td></tr>
-      <tr class="net"><td>Net GHG emission reductions or removals</td><td>—</td><td style="color:rgba(255,255,255,0.7);font-size:9pt;">Cần baseline để tính net</td></tr>
+      <tr><td>Rò rỉ (Leakage)</td><td>—</td><td style="font-size:9pt;color:#888;">Chưa tính</td></tr>
+      <tr><td><strong>ΔCO₂_soil — Thay đổi SOC (VM0042)</strong></td><td style="color:${soc.delta >= 0 ? '#1e8449' : '#e74c3c'};">${soc.delta.toFixed(4)}</td><td style="font-size:9pt;">tC/ha (${soc.totalSamples} mẫu)</td></tr>
+      <tr class="net"><td>Giảm/loại bỏ KNK ròng</td><td>—</td><td style="color:rgba(255,255,255,0.7);font-size:9pt;">Cần baseline để tính</td></tr>
     </tbody>
   </table>
 
@@ -423,7 +423,7 @@ function generateReport() {
     <div class="header-title"><h1>${reportTitle}</h1><p>${reportSubtitle}</p></div>
   </div>
 
-  <h2 class="section">SOC Monitoring Data — VM0042</h2>
+  <h2 class="section">Dữ liệu giám sát SOC — VM0042</h2>
   <table class="data-table">
     <thead><tr><th>Ngày</th><th>Nông hộ</th><th>Lớp đất</th><th>OC (g/kg)</th><th>M_sample (g)</th><th>D (mm)</th><th>N</th><th>M_n,dl,SOC (tC/ha)</th><th>Thời kỳ</th></tr></thead>
     <tbody>
@@ -440,7 +440,7 @@ function generateReport() {
     </tbody>
   </table>
 
-  <h3 class="subsection">SOC Summary</h3>
+  <h3 class="subsection">Tóm tắt SOC</h3>
   <table class="data-table">
     <thead><tr><th>Chỉ số</th><th>Giá trị</th><th>Đơn vị</th></tr></thead>
     <tbody>
@@ -458,7 +458,7 @@ function generateReport() {
     <div class="header-title"><h1>${reportTitle}</h1><p>${reportSubtitle}</p></div>
   </div>
 
-  <h2 class="section">Monitoring Data — Farm Diary (Nhật ký canh tác)</h2>
+  <h2 class="section">Dữ liệu giám sát — Nhật ký canh tác</h2>
   <table class="data-table">
     <thead><tr><th>Ngày</th><th>Nông hộ</th><th>Loại phân / N</th><th>N (kg)</th><th>Vôi (t)</th><th>Dolomite (t)</th><th>Nhiên liệu</th><th>Lít</th><th>Diện tích (ha)</th></tr></thead>
     <tbody>
@@ -485,32 +485,32 @@ function generateReport() {
     <div class="header-title"><h1>${reportTitle}</h1><p>${reportSubtitle}</p></div>
   </div>
 
-  <h2 class="section">CCB Standards Criteria Checklist</h2>
+  <h2 class="section">Danh sách tiêu chí CCB Standards</h2>
   <table class="checklist-table">
-    <thead><tr><th>Criteria</th><th style="text-align:center;">Conformance</th></tr></thead>
+    <thead><tr><th>Tiêu chí</th><th style="text-align:center;">Tuân thủ</th></tr></thead>
     <tbody>
-      <tr><td class="section-head" colspan="2">GENERAL SECTION</td></tr>
-      <tr><td>G1. Original Conditions in the Project Area (Required)</td><td style="text-align:center;">YES __&nbsp;&nbsp; NO __</td></tr>
-      <tr><td>G2. Baseline Projections (Required)</td><td style="text-align:center;">YES __&nbsp;&nbsp; NO __</td></tr>
-      <tr><td>G3. Project Design and Goals (Required)</td><td style="text-align:center;">YES __&nbsp;&nbsp; NO __</td></tr>
-      <tr><td>G4. Management Capacity and Best Practices (Required)</td><td style="text-align:center;">YES __&nbsp;&nbsp; NO __</td></tr>
-      <tr><td>G5. Legal Status and Property Rights (Required)</td><td style="text-align:center;">YES __&nbsp;&nbsp; NO __</td></tr>
-      <tr><td class="section-head" colspan="2">CLIMATE SECTION</td></tr>
-      <tr><td>CL1. Net Positive Climate Impacts (Required)</td><td style="text-align:center;">YES __&nbsp;&nbsp; NO __</td></tr>
-      <tr><td>CL2. Offsite Climate Impacts / Leakage (Required)</td><td style="text-align:center;">YES __&nbsp;&nbsp; NO __</td></tr>
-      <tr><td>CL3. Climate Impact Monitoring (Required)</td><td style="text-align:center;">YES __&nbsp;&nbsp; NO __</td></tr>
-      <tr><td class="section-head" colspan="2">COMMUNITY SECTION</td></tr>
-      <tr><td>CM1. Net Positive Community Impacts (Required)</td><td style="text-align:center;">YES __&nbsp;&nbsp; NO __</td></tr>
-      <tr><td>CM2. Offsite Community Impacts (Required)</td><td style="text-align:center;">YES __&nbsp;&nbsp; NO __</td></tr>
-      <tr><td>CM3. Community Impact Monitoring (Required)</td><td style="text-align:center;">YES __&nbsp;&nbsp; NO __</td></tr>
-      <tr><td class="section-head" colspan="2">BIODIVERSITY SECTION</td></tr>
-      <tr><td>B1. Net Positive Biodiversity Impacts (Required)</td><td style="text-align:center;">YES __&nbsp;&nbsp; NO __</td></tr>
-      <tr><td>B2. Offsite Biodiversity Impacts (Required)</td><td style="text-align:center;">YES __&nbsp;&nbsp; NO __</td></tr>
-      <tr><td>B3. Biodiversity Impact Monitoring (Required)</td><td style="text-align:center;">YES __&nbsp;&nbsp; NO __</td></tr>
-      <tr><td class="section-head" colspan="2">GOLD SECTION (Optional)</td></tr>
-      <tr><td>GL1. Climate Change Adaptation Benefits</td><td style="text-align:center;">YES __&nbsp;&nbsp; NO __</td></tr>
-      <tr><td>GL2. Exceptional Community Benefits</td><td style="text-align:center;">YES __&nbsp;&nbsp; NO __</td></tr>
-      <tr><td>GL3. Exceptional Biodiversity Benefits</td><td style="text-align:center;">YES __&nbsp;&nbsp; NO __</td></tr>
+      <tr><td class="section-head" colspan="2">PHẦN CHUNG</td></tr>
+      <tr><td>G1. Điều kiện ban đầu tại khu vực dự án (Bắt buộc)</td><td style="text-align:center;">CÓ __&nbsp;&nbsp; KHÔNG __</td></tr>
+      <tr><td>G2. Dự báo đường cơ sở (Bắt buộc)</td><td style="text-align:center;">CÓ __&nbsp;&nbsp; KHÔNG __</td></tr>
+      <tr><td>G3. Thiết kế và mục tiêu dự án (Bắt buộc)</td><td style="text-align:center;">CÓ __&nbsp;&nbsp; KHÔNG __</td></tr>
+      <tr><td>G4. Năng lực quản lý và thực hành tốt nhất (Bắt buộc)</td><td style="text-align:center;">CÓ __&nbsp;&nbsp; KHÔNG __</td></tr>
+      <tr><td>G5. Tình trạng pháp lý và quyền tài sản (Bắt buộc)</td><td style="text-align:center;">CÓ __&nbsp;&nbsp; KHÔNG __</td></tr>
+      <tr><td class="section-head" colspan="2">PHẦN KHÍ HẬU</td></tr>
+      <tr><td>CL1. Tác động khí hậu tích cực ròng (Bắt buộc)</td><td style="text-align:center;">CÓ __&nbsp;&nbsp; KHÔNG __</td></tr>
+      <tr><td>CL2. Tác động khí hậu ngoài khu vực / Rò rỉ (Bắt buộc)</td><td style="text-align:center;">CÓ __&nbsp;&nbsp; KHÔNG __</td></tr>
+      <tr><td>CL3. Giám sát tác động khí hậu (Bắt buộc)</td><td style="text-align:center;">CÓ __&nbsp;&nbsp; KHÔNG __</td></tr>
+      <tr><td class="section-head" colspan="2">PHẦN CỘNG ĐỒNG</td></tr>
+      <tr><td>CM1. Tác động cộng đồng tích cực ròng (Bắt buộc)</td><td style="text-align:center;">CÓ __&nbsp;&nbsp; KHÔNG __</td></tr>
+      <tr><td>CM2. Tác động cộng đồng ngoài khu vực (Bắt buộc)</td><td style="text-align:center;">CÓ __&nbsp;&nbsp; KHÔNG __</td></tr>
+      <tr><td>CM3. Giám sát tác động cộng đồng (Bắt buộc)</td><td style="text-align:center;">CÓ __&nbsp;&nbsp; KHÔNG __</td></tr>
+      <tr><td class="section-head" colspan="2">PHẦN ĐA DẠNG SINH HỌC</td></tr>
+      <tr><td>B1. Tác động đa dạng sinh học tích cực ròng (Bắt buộc)</td><td style="text-align:center;">CÓ __&nbsp;&nbsp; KHÔNG __</td></tr>
+      <tr><td>B2. Tác động đa dạng sinh học ngoài khu vực (Bắt buộc)</td><td style="text-align:center;">CÓ __&nbsp;&nbsp; KHÔNG __</td></tr>
+      <tr><td>B3. Giám sát tác động đa dạng sinh học (Bắt buộc)</td><td style="text-align:center;">CÓ __&nbsp;&nbsp; KHÔNG __</td></tr>
+      <tr><td class="section-head" colspan="2">PHẦN VÀNG (Tùy chọn)</td></tr>
+      <tr><td>GL1. Lợi ích thích ứng biến đổi khí hậu</td><td style="text-align:center;">CÓ __&nbsp;&nbsp; KHÔNG __</td></tr>
+      <tr><td>GL2. Lợi ích cộng đồng đặc biệt</td><td style="text-align:center;">CÓ __&nbsp;&nbsp; KHÔNG __</td></tr>
+      <tr><td>GL3. Lợi ích đa dạng sinh học đặc biệt</td><td style="text-align:center;">CÓ __&nbsp;&nbsp; KHÔNG __</td></tr>
     </tbody>
   </table>
 
