@@ -25,8 +25,8 @@ function renderFarmDiary(container) {
             </button>
         </div>
         <div class="card">
-            <div class="table-wrapper">
-                <table class="data-table">
+            <div class="table-wrapper" style="overflow-x:auto;">
+                <table class="data-table" style="min-width:900px;">
                     <thead>
                         <tr>
                             <th>Ngày</th>
