@@ -463,8 +463,9 @@ function mapDiaryHeader(headers) {
         if (n.includes('ham luong n') || n.includes('n %') || n === 'n percent' || n.match(/^n\b.*phan tram/)) { map.nPercent = i; return; }
         if (n.includes('voi') || n.includes('limestone')) { map.limestone = i; return; }
         if (n.includes('dolomite')) { map.dolomite = i; return; }
-        if (n.includes('loai nhien lieu') || n === 'fuel type') { map.fuelType = i; return; }
-        if ((n.includes('nhien lieu') || n === 'fuel') && !n.includes('loai')) { map.fuel = i; return; }
+        if (n.includes('loai nhien lieu') || n.includes('loai nl') || n.includes('loai nang luong') || n === 'fuel type') { map.fuelType = i; return; }
+        if ((n.includes('nhien lieu') || n.includes('so luong') || n === 'fuel') && !n.includes('loai')) { map.fuel = i; return; }
+        if (n.includes('khoi luong n') || n.includes('kg n')) { map.nKgDirect = i; return; }
         if (n.includes('ghi chu') || n.includes('note') || n.includes('comment')) { map.notes = i; return; }
     });
     return map;
@@ -505,7 +506,7 @@ function parseRowToDiary(row, map, farms) {
 
     const fertAmount = pn('fertilizerAmount');
     const nPct = pn('nPercent');
-    const nKg = parseFloat((fertAmount * nPct / 100).toFixed(3));
+    const nKg = map.nKgDirect !== undefined ? pn('nKgDirect') : parseFloat((fertAmount * nPct / 100).toFixed(3));
 
     const nCatRaw = pf('nCategory').toUpperCase();
     const nCategory = nCatRaw.includes('FSN') ? 'FSN' : nCatRaw.includes('FON') ? 'FON' : nCatRaw.includes('NONE') || nCatRaw.includes('KHONG') ? 'none' : '';
