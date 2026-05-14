@@ -62,30 +62,32 @@ function saveEvidence() {
 }
 
 /* ========== FARM MAP (Bản đồ nông hộ) ========== */
+let MAPBOX_TOKEN = '';
 let _farmMap = null;
 let _farmMapTileLayer = null;
 
-function saveMapboxToken() {
-    const val = document.getElementById('mapbox-key-input')?.value.trim();
-    if (!val) return;
-    localStorage.setItem('mapbox_token', val);
-    renderFarmMap(document.getElementById('main-content'));
+async function loadMapboxToken() {
+    if (MAPBOX_TOKEN) return MAPBOX_TOKEN;
+    try {
+        const r = await fetch('/api/config');
+        const d = await r.json();
+        MAPBOX_TOKEN = d.mapboxToken || '';
+    } catch(e) { MAPBOX_TOKEN = ''; }
+    return MAPBOX_TOKEN;
 }
 
 function switchMapStyle(btn, style) {
     document.querySelectorAll('.map-style-btn').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
-    const token = localStorage.getItem('mapbox_token');
-    if (!_farmMap || !token) return;
+    if (!_farmMap) return;
     if (_farmMapTileLayer) _farmMap.removeLayer(_farmMapTileLayer);
     _farmMapTileLayer = L.tileLayer(
-        `https://api.mapbox.com/styles/v1/mapbox/${style}/tiles/256/{z}/{x}/{y}?access_token=${token}`,
+        `https://api.mapbox.com/styles/v1/mapbox/${style}/tiles/256/{z}/{x}/{y}?access_token=${MAPBOX_TOKEN}`,
         { attribution: '© <a href="https://mapbox.com">Mapbox</a> © <a href="https://openstreetmap.org">OSM</a>', tileSize: 256, maxZoom: 20 }
     ).addTo(_farmMap);
 }
 
 function renderFarmMap(container) {
-    const token = localStorage.getItem('mapbox_token') || '';
     const farms = JSON.parse(localStorage.getItem('mrv_farms') || '[]');
     const farmsWithCoords = farms.filter(f => f.lat && f.lng);
 
@@ -94,32 +96,14 @@ function renderFarmMap(container) {
             <h1 class="page-title">Bản đồ nông hộ</h1>
             <p class="page-desc">Vị trí các nông hộ và vùng trồng dừa</p>
         </div>
-        ${!token ? `
-        <div class="card" style="margin-bottom:16px;border-left:3px solid #f39c12;">
-            <div style="display:flex;align-items:flex-start;gap:14px;">
-                <i class="fas fa-key" style="color:#f39c12;margin-top:2px;"></i>
-                <div style="flex:1;">
-                    <div style="font-weight:600;margin-bottom:6px;">Cấu hình Mapbox API Key</div>
-                    <div style="display:flex;gap:8px;">
-                        <input type="text" id="mapbox-key-input" placeholder="pk.eyJ1IjoiLi4uIiwiYSI6Ii4uLiJ9..."
-                            style="flex:1;padding:7px 10px;border:1px solid var(--border);border-radius:6px;background:var(--surface);color:var(--text);font-size:13px;">
-                        <button onclick="saveMapboxToken()" class="btn btn-primary">Lưu & Tải</button>
-                    </div>
-                    <div style="font-size:11px;color:var(--text-muted);margin-top:5px;">
-                        Lấy miễn phí tại <a href="https://account.mapbox.com/access-tokens/" target="_blank" style="color:var(--primary);">account.mapbox.com</a> → Create a token
-                    </div>
-                </div>
-            </div>
-        </div>` : ''}
         <div class="card">
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
                 <div style="font-weight:600;font-size:14px;"><i class="fas fa-map-marked-alt" style="color:var(--primary);margin-right:6px;"></i>Bản đồ vùng dự án (${farmsWithCoords.length} nông hộ có tọa độ)</div>
-                ${token ? `<div style="display:flex;gap:6px;">
+                <div style="display:flex;gap:6px;">
                     <button class="btn btn-sm map-style-btn active" onclick="switchMapStyle(this,'streets-v12')">Đường phố</button>
                     <button class="btn btn-sm map-style-btn" onclick="switchMapStyle(this,'satellite-streets-v12')">Vệ tinh</button>
                     <button class="btn btn-sm map-style-btn" onclick="switchMapStyle(this,'dark-v11')">Tối</button>
-                    <button class="btn btn-sm" onclick="localStorage.removeItem('mapbox_token');renderFarmMap(document.getElementById('main-content'));" style="color:var(--text-muted);" title="Đổi token"><i class="fas fa-key"></i></button>
-                </div>` : ''}
+                </div>
             </div>
             <div id="farm-map-view" style="height:520px;border-radius:8px;overflow:hidden;border:1px solid var(--border);"></div>
         </div>
@@ -146,21 +130,15 @@ function renderFarmMap(container) {
         </div>
     `;
 
-    setTimeout(() => {
+    setTimeout(async () => {
         try {
+            await loadMapboxToken();
             _farmMap = L.map('farm-map-view').setView([10.25, 106.37], 10);
 
-            if (token) {
-                _farmMapTileLayer = L.tileLayer(
-                    `https://api.mapbox.com/styles/v1/mapbox/streets-v12/tiles/256/{z}/{x}/{y}?access_token=${token}`,
-                    { attribution: '© <a href="https://mapbox.com">Mapbox</a> © <a href="https://openstreetmap.org">OSM</a>', tileSize: 256, maxZoom: 20 }
-                ).addTo(_farmMap);
-            } else {
-                _farmMapTileLayer = L.tileLayer(
-                    'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
-                    { attribution: '© <a href="https://carto.com">CARTO</a> © <a href="https://openstreetmap.org">OSM</a>', maxZoom: 20 }
-                ).addTo(_farmMap);
-            }
+            _farmMapTileLayer = L.tileLayer(
+                `https://api.mapbox.com/styles/v1/mapbox/streets-v12/tiles/256/{z}/{x}/{y}?access_token=${MAPBOX_TOKEN}`,
+                { attribution: '© <a href="https://mapbox.com">Mapbox</a> © <a href="https://openstreetmap.org">OSM</a>', tileSize: 256, maxZoom: 20 }
+            ).addTo(_farmMap);
 
             const bounds = [];
             farmsWithCoords.forEach(f => {

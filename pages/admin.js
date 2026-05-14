@@ -321,17 +321,6 @@ function renderSettings(container) {
                 </div>
             </div>
         </div>
-        <div class="card" style="margin-top:20px;">
-            <div class="card-header"><div class="card-title"><i class="fas fa-key"></i> API</div></div>
-            <div class="form-group"><label>API Endpoint</label><input type="text" placeholder="https://api.exas-mrv.vn/v1" readonly></div>
-            <div class="form-group"><label>API Key</label>
-                <div class="password-wrapper">
-                    <input type="password" value="sk-mrv-xxxxxxxxxxxx" readonly>
-                    <button type="button" class="toggle-password" onclick="this.previousElementSibling.type=this.previousElementSibling.type==='password'?'text':'password'"><i class="fas fa-eye"></i></button>
-                </div>
-            </div>
-            <p style="font-size:12px;color:var(--text-muted);margin-top:8px;"><i class="fas fa-info-circle" style="margin-right:4px;"></i> API cho phép tích hợp và đồng bộ dữ liệu canh tác - sinh khối giữa các nền tảng.</p>
-        </div>
         <div style="margin-top:20px;display:flex;gap:12px;">
             <button class="btn btn-primary"><i class="fas fa-save"></i> Lưu cài đặt</button>
             <button class="btn btn-danger"><i class="fas fa-undo"></i> Khôi phục mặc định</button>
