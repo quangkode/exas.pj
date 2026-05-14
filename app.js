@@ -48,10 +48,11 @@ let currentUser = null;
 let currentPage = 'dashboard';
 
 // ===== INIT =====
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
     initParticles();
     initLogin();
     initDate();
+    await (window.firebaseReady || Promise.resolve());
     const saved = sessionStorage.getItem('mrv_user');
     if (saved) {
         currentUser = JSON.parse(saved);
