@@ -79,8 +79,8 @@ function switchMapStyle(btn, style) {
     if (!_farmMap || !token) return;
     if (_farmMapTileLayer) _farmMap.removeLayer(_farmMapTileLayer);
     _farmMapTileLayer = L.tileLayer(
-        `https://api.mapbox.com/styles/v1/mapbox/${style}/tiles/{z}/{x}/{y}@2x?access_token=${token}`,
-        { attribution: '© <a href="https://mapbox.com">Mapbox</a> © <a href="https://openstreetmap.org">OSM</a>', tileSize: 512, zoomOffset: -1, maxZoom: 20 }
+        `https://api.mapbox.com/styles/v1/mapbox/${style}/tiles/256/{z}/{x}/{y}?access_token=${token}`,
+        { attribution: '© <a href="https://mapbox.com">Mapbox</a> © <a href="https://openstreetmap.org">OSM</a>', tileSize: 256, maxZoom: 20 }
     ).addTo(_farmMap);
 }
 
@@ -152,8 +152,8 @@ function renderFarmMap(container) {
 
             if (token) {
                 _farmMapTileLayer = L.tileLayer(
-                    `https://api.mapbox.com/styles/v1/mapbox/streets-v12/tiles/{z}/{x}/{y}@2x?access_token=${token}`,
-                    { attribution: '© <a href="https://mapbox.com">Mapbox</a> © <a href="https://openstreetmap.org">OSM</a>', tileSize: 512, zoomOffset: -1, maxZoom: 20 }
+                    `https://api.mapbox.com/styles/v1/mapbox/streets-v12/tiles/256/{z}/{x}/{y}?access_token=${token}`,
+                    { attribution: '© <a href="https://mapbox.com">Mapbox</a> © <a href="https://openstreetmap.org">OSM</a>', tileSize: 256, maxZoom: 20 }
                 ).addTo(_farmMap);
             } else {
                 _farmMapTileLayer = L.tileLayer(
