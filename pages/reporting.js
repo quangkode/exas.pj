@@ -241,8 +241,8 @@ function generateReport() {
     const diaries = farmFilter ? allDiaries.filter(e => matchesFarm(e, farmFilter, farmsList)) : allDiaries;
     const socData = farmFilter ? allSocData.filter(e => matchesFarm(e, farmFilter, farmsList)) : allSocData;
 
-    const reportTitle = reportType === 'verification' ? 'BÁO CÁO XÁC MINH' : 'BÁO CÁO GIÁM SÁT';
-    const reportSubtitle = 'VCS Phiên bản 4, Phương pháp luận VM0042';
+    const reportTitle = reportType === 'verification' ? 'VERIFICATION REPORT' : 'MONITORING REPORT';
+    const reportSubtitle = 'VCS Version 4 — VM0042 Methodology';
 
     const html = `<!DOCTYPE html>
 <html lang="vi">
@@ -336,30 +336,30 @@ function generateReport() {
   <!-- TITLE PAGE -->
   <div class="title-center">
     <h1>${projectName}</h1>
-    <p>ExAS MRV System — Hệ thống Đo lường, Báo cáo & Xác minh</p>
-    <p style="margin-top:8px;color:#888;font-size:9pt;">Phương pháp luận VM0042 — Verra Verified Carbon Standard</p>
+    <p>ExAS MRV System — Measurement, Reporting & Verification</p>
+    <p style="margin-top:8px;color:#888;font-size:9pt;">VM0042 Methodology — Verra Verified Carbon Standard</p>
   </div>
 
   <table class="meta-table">
-    <tr><td>Tên dự án</td><td>${projectName}</td></tr>
-    <tr><td>Tiêu đề báo cáo</td><td>${reportTitle} — ${reportPeriod}</td></tr>
-    <tr><td>Phiên bản</td><td>v1.0</td></tr>
-    <tr><td>Mã báo cáo</td><td>EXAS-${todayShort.replace(/-/g,'')}-001</td></tr>
-    <tr><td>Ngày phát hành</td><td>${today}</td></tr>
-    <tr><td>Người lập</td><td>${preparedBy}</td></tr>
-    <tr><td>Kỳ báo cáo</td><td>${reportPeriod}</td></tr>
-    <tr><td>Phương pháp luận</td><td>VM0042 — Verra VCS Version 4</td></tr>
-    <tr><td>Trang</td><td>Tự động tạo</td></tr>
+    <tr><td>Project Name</td><td>${projectName}</td></tr>
+    <tr><td>Report Title</td><td>${reportTitle} — ${reportPeriod}</td></tr>
+    <tr><td>Version</td><td>v1.0</td></tr>
+    <tr><td>Report ID</td><td>EXAS-${todayShort.replace(/-/g,'')}-001</td></tr>
+    <tr><td>Issue Date</td><td>${today}</td></tr>
+    <tr><td>Prepared By</td><td>${preparedBy}</td></tr>
+    <tr><td>Reporting Period</td><td>${reportPeriod}</td></tr>
+    <tr><td>Methodology</td><td>VM0042 — Verra VCS Version 4</td></tr>
+    <tr><td>Pages</td><td>Auto-generated</td></tr>
   </table>
 
   <!-- SUMMARY -->
-  <h2 class="section">Tóm tắt</h2>
+  <h2 class="section">Executive Summary</h2>
   <div class="summary-box">
-    <strong>Mô tả dự án:</strong> ${projectName} áp dụng phương pháp luận VM0042 của Verra để đo lường và giám sát sự thay đổi trữ lượng carbon hữu cơ trong đất (SOC) và phát thải khí nhà kính từ hoạt động canh tác nông nghiệp.<br><br>
-    <strong>Kỳ giám sát:</strong> ${reportPeriod}<br>
-    <strong>Số nhật ký canh tác:</strong> ${diaries.length} bản ghi<br>
-    <strong>Số mẫu đất SOC:</strong> ${socData.length} mẫu (${soc.totalSamples} tổng)<br>
-    <strong>Phương pháp xác minh:</strong> Thu thập dữ liệu thực địa, phân tích phòng lab, áp dụng hệ số phát thải IPCC Tier 1
+    <strong>Project Description:</strong> ${projectName} applies Verra's VM0042 methodology to measure and monitor soil organic carbon (SOC) changes and greenhouse gas emissions from agricultural activities.<br><br>
+    <strong>Monitoring Period:</strong> ${reportPeriod}<br>
+    <strong>Farm Diary Records:</strong> ${diaries.length} records<br>
+    <strong>SOC Soil Samples:</strong> ${socData.length} samples (${soc.totalSamples} total)<br>
+    <strong>Verification Method:</strong> Field data collection, laboratory analysis, IPCC Tier 1 emission factors applied
   </div>
 
   <div class="page-break"></div>
@@ -370,64 +370,64 @@ function generateReport() {
     <div class="header-title"><h1>${reportTitle}</h1><p>${reportSubtitle}</p></div>
   </div>
 
-  <h2 class="section">8 — Định lượng Giảm/Loại bỏ phát thải KNK</h2>
+  <h2 class="section">8 — GHG Emission Reductions and Removals Quantification</h2>
 
   <p style="color:#555;font-style:italic;margin-bottom:12px;">
-    Kỳ báo cáo: ${reportPeriod} &nbsp;|&nbsp; Ngày: ${today}
+    Reporting Period: ${reportPeriod} &nbsp;|&nbsp; Date: ${today}
   </p>
 
-  <p style="margin-bottom:8px;font-weight:bold;">Giảm/loại bỏ phát thải KNK đã xác minh trong kỳ báo cáo nêu trên:</p>
+  <p style="margin-bottom:8px;font-weight:bold;">Verified GHG emission reductions and removals for the reporting period above:</p>
 
   <table class="ghg-table">
     <thead>
-      <tr><th>Giảm/Loại bỏ phát thải KNK</th><th style="text-align:right;">tCO₂e</th><th>Ghi chú</th></tr>
+      <tr><th>GHG Emission Reductions or Removals</th><th style="text-align:right;">tCO₂e</th><th>Notes</th></tr>
     </thead>
     <tbody>
-      <tr><td>Phát thải đường cơ sở</td><td>—</td><td style="font-size:9pt;color:#888;">Chưa thiết lập đường cơ sở</td></tr>
-      <tr><td><strong>Phát thải dự án (tổng)</strong></td><td>${em.totalProject.toFixed(4)}</td><td style="font-size:9pt;">EFF + EL</td></tr>
-      <tr class="sub"><td>→ EFF — Nhiên liệu hóa thạch</td><td>${em.eff.toFixed(4)}</td><td style="font-size:9pt;">FFC × EF_CO₂ (IPCC)</td></tr>
-      <tr class="sub"><td>→ EL — Bón vôi/Dolomite</td><td>${em.el.toFixed(4)}</td><td style="font-size:9pt;">((M_lime×0.12)+(M_dolo×0.13))×44/12</td></tr>
-      <tr class="sub"><td>→ N₂O_fert — Phân bón</td><td>${em.n2o.toFixed(4)} /ha</td><td style="font-size:9pt;">(FSN+FON)×EF×44/28×GWP/1000/A</td></tr>
-      <tr><td>Rò rỉ (Leakage)</td><td>—</td><td style="font-size:9pt;color:#888;">Chưa tính</td></tr>
-      <tr><td><strong>ΔCO₂_soil — Thay đổi SOC (VM0042)</strong></td><td style="color:${soc.delta >= 0 ? '#1e8449' : '#e74c3c'};">${soc.delta.toFixed(4)}</td><td style="font-size:9pt;">tC/ha (${soc.totalSamples} mẫu)</td></tr>
-      <tr class="net"><td>Giảm/loại bỏ KNK ròng</td><td>—</td><td style="color:rgba(255,255,255,0.7);font-size:9pt;">Cần baseline để tính</td></tr>
+      <tr><td>Baseline Emissions</td><td>—</td><td style="font-size:9pt;color:#888;">Baseline not yet established</td></tr>
+      <tr><td><strong>Project Emissions (total)</strong></td><td>${em.totalProject.toFixed(4)}</td><td style="font-size:9pt;">EFF + EL</td></tr>
+      <tr class="sub"><td>→ EFF — Fossil Fuel Combustion</td><td>${em.eff.toFixed(4)}</td><td style="font-size:9pt;">FFC × EF_CO₂ (IPCC)</td></tr>
+      <tr class="sub"><td>→ EL — Liming (Limestone/Dolomite)</td><td>${em.el.toFixed(4)}</td><td style="font-size:9pt;">((M_lime×0.12)+(M_dolo×0.13))×44/12</td></tr>
+      <tr class="sub"><td>→ N₂O_fert — Fertilizer Application</td><td>${em.n2o.toFixed(4)} /ha</td><td style="font-size:9pt;">(FSN+FON)×EF×44/28×GWP/1000/A</td></tr>
+      <tr><td>Leakage</td><td>—</td><td style="font-size:9pt;color:#888;">Not calculated</td></tr>
+      <tr><td><strong>ΔCO₂_soil — SOC Change (VM0042)</strong></td><td style="color:${soc.delta >= 0 ? '#1e8449' : '#e74c3c'};">${soc.delta.toFixed(4)}</td><td style="font-size:9pt;">tC/ha (${soc.totalSamples} samples)</td></tr>
+      <tr class="net"><td>Net GHG Reductions/Removals</td><td>—</td><td style="color:rgba(255,255,255,0.7);font-size:9pt;">Requires baseline to calculate</td></tr>
     </tbody>
   </table>
 
   <!-- Fuel detail -->
-  <h3 class="subsection">8.1 Chi tiết — EFF (Nhiên liệu hóa thạch)</h3>
+  <h3 class="subsection">8.1 Detail — EFF (Fossil Fuel Combustion)</h3>
   <table class="data-table">
-    <thead><tr><th>Loại nhiên liệu (j)</th><th>FFC (lít)</th><th>EF_CO₂ (tCO₂/lít)</th><th>EFF_j (tCO₂e)</th></tr></thead>
+    <thead><tr><th>Fuel Type (j)</th><th>FFC (litres)</th><th>EF_CO₂ (tCO₂/litre)</th><th>EFF_j (tCO₂e)</th></tr></thead>
     <tbody>
       <tr><td>Diesel</td><td>${em.fuelDiesel.toFixed(2)}</td><td>0.00268</td><td>${(em.fuelDiesel*0.00268).toFixed(4)}</td></tr>
-      <tr><td>Xăng (Petrol)</td><td>${em.fuelPetrol.toFixed(2)}</td><td>0.00231</td><td>${(em.fuelPetrol*0.00231).toFixed(4)}</td></tr>
+      <tr><td>Petrol (Gasoline)</td><td>${em.fuelPetrol.toFixed(2)}</td><td>0.00231</td><td>${(em.fuelPetrol*0.00231).toFixed(4)}</td></tr>
       <tr><td>LPG</td><td>${em.fuelLpg.toFixed(2)}</td><td>0.00163</td><td>${(em.fuelLpg*0.00163).toFixed(4)}</td></tr>
-      <tr style="background:#eaf2ff;font-weight:bold;"><td colspan="3">Tổng EFF</td><td>${em.eff.toFixed(4)}</td></tr>
+      <tr style="background:#eaf2ff;font-weight:bold;"><td colspan="3">Total EFF</td><td>${em.eff.toFixed(4)}</td></tr>
     </tbody>
   </table>
 
   <!-- Liming detail -->
-  <h3 class="subsection">8.2 Chi tiết — EL (Vôi/Dolomite)</h3>
+  <h3 class="subsection">8.2 Detail — EL (Liming)</h3>
   <table class="data-table">
-    <thead><tr><th>Loại</th><th>Khối lượng (tấn)</th><th>EF (tC/tấn)</th><th>Trước × 44/12</th></tr></thead>
+    <thead><tr><th>Type</th><th>Mass (tonnes)</th><th>EF (tC/tonne)</th><th>Subtotal × 44/12</th></tr></thead>
     <tbody>
-      <tr><td>Vôi (Limestone)</td><td>${em.limestone.toFixed(3)}</td><td>0.12</td><td>${(em.limestone*0.12).toFixed(4)}</td></tr>
+      <tr><td>Limestone</td><td>${em.limestone.toFixed(3)}</td><td>0.12</td><td>${(em.limestone*0.12).toFixed(4)}</td></tr>
       <tr><td>Dolomite</td><td>${em.dolomite.toFixed(3)}</td><td>0.13</td><td>${(em.dolomite*0.13).toFixed(4)}</td></tr>
-      <tr style="background:#eaf2ff;font-weight:bold;"><td colspan="3">EL = (tổng trên) × 44/12</td><td>${em.el.toFixed(4)}</td></tr>
+      <tr style="background:#eaf2ff;font-weight:bold;"><td colspan="3">EL = (subtotal above) × 44/12</td><td>${em.el.toFixed(4)}</td></tr>
     </tbody>
   </table>
 
   <!-- N2O detail -->
-  <h3 class="subsection">8.3 Chi tiết — N₂O_fert (Phân bón)</h3>
+  <h3 class="subsection">8.3 Detail — N₂O_fert (Fertilizer Application)</h3>
   <table class="data-table">
-    <thead><tr><th>Thông số</th><th>Giá trị</th><th>Đơn vị</th></tr></thead>
+    <thead><tr><th>Parameter</th><th>Value</th><th>Unit</th></tr></thead>
     <tbody>
-      <tr><td>FSN (Phân tổng hợp)</td><td>${em.fsn.toFixed(3)}</td><td>kg N</td></tr>
-      <tr><td>FON (Phân hữu cơ)</td><td>${em.fon.toFixed(3)}</td><td>kg N</td></tr>
+      <tr><td>FSN (Synthetic Nitrogen Fertilizer)</td><td>${em.fsn.toFixed(3)}</td><td>kg N</td></tr>
+      <tr><td>FON (Organic Nitrogen Fertilizer)</td><td>${em.fon.toFixed(3)}</td><td>kg N</td></tr>
       <tr><td>FSN + FON</td><td>${(em.fsn+em.fon).toFixed(3)}</td><td>kg N</td></tr>
       <tr><td>EF_Ndirect (IPCC Tier 1)</td><td>0.01</td><td>kg N₂O-N / kg N</td></tr>
       <tr><td>GWP_N₂O (AR5)</td><td>265</td><td>kg CO₂e / kg N₂O</td></tr>
-      <tr><td>Diện tích A_i</td><td>${em.maxArea.toFixed(2)}</td><td>ha</td></tr>
+      <tr><td>Area A_i</td><td>${em.maxArea.toFixed(2)}</td><td>ha</td></tr>
       <tr style="background:#eaf2ff;font-weight:bold;"><td>N₂O_fert</td><td>${em.n2o.toFixed(4)}</td><td>t CO₂e/ha</td></tr>
     </tbody>
   </table>
@@ -440,30 +440,30 @@ function generateReport() {
     <div class="header-title"><h1>${reportTitle}</h1><p>${reportSubtitle}</p></div>
   </div>
 
-  <h2 class="section">Dữ liệu giám sát SOC — VM0042</h2>
+  <h2 class="section">SOC Monitoring Data — VM0042</h2>
   <table class="data-table">
-    <thead><tr><th>Ngày</th><th>Nông hộ</th><th>Lớp đất</th><th>OC (g/kg)</th><th>M_sample (g)</th><th>D (mm)</th><th>N</th><th>M_n,dl,SOC (tC/ha)</th><th>Thời kỳ</th></tr></thead>
+    <thead><tr><th>Date</th><th>Farm</th><th>Soil Layer</th><th>OC (g/kg)</th><th>M_sample (g)</th><th>D (mm)</th><th>N Cores</th><th>M_n,dl,SOC (tC/ha)</th><th>Period</th></tr></thead>
     <tbody>
       ${socData.length === 0
-        ? '<tr><td colspan="9" style="text-align:center;color:#888;">Chưa có dữ liệu</td></tr>'
+        ? '<tr><td colspan="9" style="text-align:center;color:#888;">No data available</td></tr>'
         : socData.map(e => `<tr>
           <td>${e.date}</td><td>${e.farm}</td><td>${e.layer}</td>
           <td>${e.ocGperKg || (e.soc ? (e.soc*10).toFixed(1) : '--')}</td>
           <td>${e.mSample || '--'}</td><td>${e.tubeDiameter || '--'}</td><td>${e.numCores || '--'}</td>
           <td style="font-weight:bold;color:#1a5276;">${e.socMassVM0042 != null ? parseFloat(e.socMassVM0042).toFixed(4) : '--'}</td>
-          <td>${e.isBeginning ? 'Đầu vụ' : 'Cuối vụ'}</td>
+          <td>${e.isBeginning ? 'Beginning' : 'End'}</td>
         </tr>`).join('')
       }
     </tbody>
   </table>
 
-  <h3 class="subsection">Tóm tắt SOC</h3>
+  <h3 class="subsection">SOC Summary</h3>
   <table class="data-table">
-    <thead><tr><th>Chỉ số</th><th>Giá trị</th><th>Đơn vị</th></tr></thead>
+    <thead><tr><th>Indicator</th><th>Value</th><th>Unit</th></tr></thead>
     <tbody>
-      <tr><td>SOC_wp,i,t-x (Đầu vụ TB)</td><td>${soc.avgBegin.toFixed(4)}</td><td>tC/ha</td></tr>
-      <tr><td>SOC_wp,i,t (Cuối vụ TB)</td><td>${soc.avgEnd.toFixed(4)}</td><td>tC/ha</td></tr>
-      <tr style="font-weight:bold;background:#eaf2ff;"><td>ΔCO₂_soil (thay đổi SOC)</td><td style="color:${soc.delta>=0?'#1e8449':'#e74c3c'};">${soc.delta.toFixed(4)}</td><td>tC/ha</td></tr>
+      <tr><td>SOC_wp,i,t-x (Beginning Average)</td><td>${soc.avgBegin.toFixed(4)}</td><td>tC/ha</td></tr>
+      <tr><td>SOC_wp,i,t (End Average)</td><td>${soc.avgEnd.toFixed(4)}</td><td>tC/ha</td></tr>
+      <tr style="font-weight:bold;background:#eaf2ff;"><td>ΔCO₂_soil (SOC Change)</td><td style="color:${soc.delta>=0?'#1e8449':'#e74c3c'};">${soc.delta.toFixed(4)}</td><td>tC/ha</td></tr>
     </tbody>
   </table>
 
@@ -475,12 +475,12 @@ function generateReport() {
     <div class="header-title"><h1>${reportTitle}</h1><p>${reportSubtitle}</p></div>
   </div>
 
-  <h2 class="section">Dữ liệu giám sát — Nhật ký canh tác</h2>
+  <h2 class="section">Monitoring Data — Farm Diary</h2>
   <table class="data-table">
-    <thead><tr><th>Ngày</th><th>Nông hộ</th><th>Loại phân / N</th><th>N (kg)</th><th>Vôi (t)</th><th>Dolomite (t)</th><th>Nhiên liệu</th><th>Lít</th><th>Diện tích (ha)</th></tr></thead>
+    <thead><tr><th>Date</th><th>Farm</th><th>Fertilizer Type / N</th><th>N (kg)</th><th>Limestone (t)</th><th>Dolomite (t)</th><th>Fuel Type</th><th>Litres</th><th>Area (ha)</th></tr></thead>
     <tbody>
       ${diaries.length === 0
-        ? '<tr><td colspan="9" style="text-align:center;color:#888;">Chưa có dữ liệu</td></tr>'
+        ? '<tr><td colspan="9" style="text-align:center;color:#888;">No data available</td></tr>'
         : diaries.map(e => `<tr>
           <td>${e.date}</td><td>${e.farm}</td>
           <td>${e.fertilizerType || '--'} ${e.nCategory ? '['+e.nCategory+']' : ''}</td>
@@ -502,32 +502,32 @@ function generateReport() {
     <div class="header-title"><h1>${reportTitle}</h1><p>${reportSubtitle}</p></div>
   </div>
 
-  <h2 class="section">Danh sách tiêu chí CCB Standards</h2>
+  <h2 class="section">CCB Standards Compliance Checklist</h2>
   <table class="checklist-table">
-    <thead><tr><th>Tiêu chí</th><th style="text-align:center;">Tuân thủ</th></tr></thead>
+    <thead><tr><th>Criterion</th><th style="text-align:center;">Compliance</th></tr></thead>
     <tbody>
-      <tr><td class="section-head" colspan="2">PHẦN CHUNG</td></tr>
-      <tr><td>G1. Điều kiện ban đầu tại khu vực dự án (Bắt buộc)</td><td style="text-align:center;">CÓ __&nbsp;&nbsp; KHÔNG __</td></tr>
-      <tr><td>G2. Dự báo đường cơ sở (Bắt buộc)</td><td style="text-align:center;">CÓ __&nbsp;&nbsp; KHÔNG __</td></tr>
-      <tr><td>G3. Thiết kế và mục tiêu dự án (Bắt buộc)</td><td style="text-align:center;">CÓ __&nbsp;&nbsp; KHÔNG __</td></tr>
-      <tr><td>G4. Năng lực quản lý và thực hành tốt nhất (Bắt buộc)</td><td style="text-align:center;">CÓ __&nbsp;&nbsp; KHÔNG __</td></tr>
-      <tr><td>G5. Tình trạng pháp lý và quyền tài sản (Bắt buộc)</td><td style="text-align:center;">CÓ __&nbsp;&nbsp; KHÔNG __</td></tr>
-      <tr><td class="section-head" colspan="2">PHẦN KHÍ HẬU</td></tr>
-      <tr><td>CL1. Tác động khí hậu tích cực ròng (Bắt buộc)</td><td style="text-align:center;">CÓ __&nbsp;&nbsp; KHÔNG __</td></tr>
-      <tr><td>CL2. Tác động khí hậu ngoài khu vực / Rò rỉ (Bắt buộc)</td><td style="text-align:center;">CÓ __&nbsp;&nbsp; KHÔNG __</td></tr>
-      <tr><td>CL3. Giám sát tác động khí hậu (Bắt buộc)</td><td style="text-align:center;">CÓ __&nbsp;&nbsp; KHÔNG __</td></tr>
-      <tr><td class="section-head" colspan="2">PHẦN CỘNG ĐỒNG</td></tr>
-      <tr><td>CM1. Tác động cộng đồng tích cực ròng (Bắt buộc)</td><td style="text-align:center;">CÓ __&nbsp;&nbsp; KHÔNG __</td></tr>
-      <tr><td>CM2. Tác động cộng đồng ngoài khu vực (Bắt buộc)</td><td style="text-align:center;">CÓ __&nbsp;&nbsp; KHÔNG __</td></tr>
-      <tr><td>CM3. Giám sát tác động cộng đồng (Bắt buộc)</td><td style="text-align:center;">CÓ __&nbsp;&nbsp; KHÔNG __</td></tr>
-      <tr><td class="section-head" colspan="2">PHẦN ĐA DẠNG SINH HỌC</td></tr>
-      <tr><td>B1. Tác động đa dạng sinh học tích cực ròng (Bắt buộc)</td><td style="text-align:center;">CÓ __&nbsp;&nbsp; KHÔNG __</td></tr>
-      <tr><td>B2. Tác động đa dạng sinh học ngoài khu vực (Bắt buộc)</td><td style="text-align:center;">CÓ __&nbsp;&nbsp; KHÔNG __</td></tr>
-      <tr><td>B3. Giám sát tác động đa dạng sinh học (Bắt buộc)</td><td style="text-align:center;">CÓ __&nbsp;&nbsp; KHÔNG __</td></tr>
-      <tr><td class="section-head" colspan="2">PHẦN VÀNG (Tùy chọn)</td></tr>
-      <tr><td>GL1. Lợi ích thích ứng biến đổi khí hậu</td><td style="text-align:center;">CÓ __&nbsp;&nbsp; KHÔNG __</td></tr>
-      <tr><td>GL2. Lợi ích cộng đồng đặc biệt</td><td style="text-align:center;">CÓ __&nbsp;&nbsp; KHÔNG __</td></tr>
-      <tr><td>GL3. Lợi ích đa dạng sinh học đặc biệt</td><td style="text-align:center;">CÓ __&nbsp;&nbsp; KHÔNG __</td></tr>
+      <tr><td class="section-head" colspan="2">GENERAL SECTION</td></tr>
+      <tr><td>G1. Initial Conditions in the Project Area (Required)</td><td style="text-align:center;">YES __&nbsp;&nbsp; NO __</td></tr>
+      <tr><td>G2. Baseline Projections (Required)</td><td style="text-align:center;">YES __&nbsp;&nbsp; NO __</td></tr>
+      <tr><td>G3. Project Design and Objectives (Required)</td><td style="text-align:center;">YES __&nbsp;&nbsp; NO __</td></tr>
+      <tr><td>G4. Management Capacity and Best Practices (Required)</td><td style="text-align:center;">YES __&nbsp;&nbsp; NO __</td></tr>
+      <tr><td>G5. Legal Status and Property Rights (Required)</td><td style="text-align:center;">YES __&nbsp;&nbsp; NO __</td></tr>
+      <tr><td class="section-head" colspan="2">CLIMATE SECTION</td></tr>
+      <tr><td>CL1. Net Positive Climate Impact (Required)</td><td style="text-align:center;">YES __&nbsp;&nbsp; NO __</td></tr>
+      <tr><td>CL2. Off-site Climate Impacts / Leakage (Required)</td><td style="text-align:center;">YES __&nbsp;&nbsp; NO __</td></tr>
+      <tr><td>CL3. Monitoring Climate Impacts (Required)</td><td style="text-align:center;">YES __&nbsp;&nbsp; NO __</td></tr>
+      <tr><td class="section-head" colspan="2">COMMUNITY SECTION</td></tr>
+      <tr><td>CM1. Net Positive Community Impact (Required)</td><td style="text-align:center;">YES __&nbsp;&nbsp; NO __</td></tr>
+      <tr><td>CM2. Off-site Community Impact (Required)</td><td style="text-align:center;">YES __&nbsp;&nbsp; NO __</td></tr>
+      <tr><td>CM3. Monitoring Community Impacts (Required)</td><td style="text-align:center;">YES __&nbsp;&nbsp; NO __</td></tr>
+      <tr><td class="section-head" colspan="2">BIODIVERSITY SECTION</td></tr>
+      <tr><td>B1. Net Positive Biodiversity Impact (Required)</td><td style="text-align:center;">YES __&nbsp;&nbsp; NO __</td></tr>
+      <tr><td>B2. Off-site Biodiversity Impact (Required)</td><td style="text-align:center;">YES __&nbsp;&nbsp; NO __</td></tr>
+      <tr><td>B3. Monitoring Biodiversity Impacts (Required)</td><td style="text-align:center;">YES __&nbsp;&nbsp; NO __</td></tr>
+      <tr><td class="section-head" colspan="2">GOLD SECTION (Optional)</td></tr>
+      <tr><td>GL1. Climate Change Adaptation Benefits</td><td style="text-align:center;">YES __&nbsp;&nbsp; NO __</td></tr>
+      <tr><td>GL2. Exceptional Community Benefits</td><td style="text-align:center;">YES __&nbsp;&nbsp; NO __</td></tr>
+      <tr><td>GL3. Exceptional Biodiversity Benefits</td><td style="text-align:center;">YES __&nbsp;&nbsp; NO __</td></tr>
     </tbody>
   </table>
 
@@ -597,55 +597,55 @@ function exportExcel() {
         ['Prepared By', preparedBy],
         ['Approved By', preparedBy],
         ['Work Carried Out By', 'ExAS MRV System'],
-        ['Summary', `Du an ap dung VM0042 de do luong va giam sat carbon nong nghiep. Ky bao cao: ${reportPeriod}.`],
+        ['Summary', `Project applies VM0042 methodology to measure and monitor agricultural carbon. Reporting period: ${reportPeriod}.`],
         [],
-        ['1.1 Objective', 'Xac minh luong giam phat thai va tang tru luong carbon theo VM0042 Verra.'],
+        ['1.1 Objective', 'Verify GHG emission reductions and carbon stock increases under VM0042 Verra methodology.'],
         ['1.2 Scope and Criteria', 'VM0042 v2.0 — Improved Agricultural Land Management, VCS Standard v4.4, CCB Standard v3.0'],
         ['1.3 Level of Assurance', 'Reasonable assurance'],
-        ['1.4 Summary Description of the Project', `Du an giam sat ${diaries.length} nhat ky canh tac, ${socData.length} mau dat SOC tren vuon dua. Phuong phap luan VM0042 Verra.`],
+        ['1.4 Summary Description of the Project', `Project monitors ${diaries.length} farm diary records and ${socData.length} SOC soil samples on coconut farms. VM0042 Verra methodology applied.`],
         [],
         ['2.1 Audit Team Composition', 'ExAS MRV System — Automated monitoring & field supervisors'],
-        ['2.2 Method and Criteria', 'Thu thap du lieu IoT, nhat ky canh tac, phan tich dat phong lab, ap dung he so IPCC Tier 1'],
-        ['2.3 Document Review', 'Nhat ky canh tac, ket qua phan tich SOC, du lieu IoT, ban do nong ho'],
-        ['2.4 Interviews', 'Nong ho tham gia du an'],
-        ['2.5 Site Visits', 'Giam sat thuc dia dinh ky theo ke hoach'],
-        ['2.7 Resolution of Findings', 'Khong co phat hien bat thuong trong ky bao cao'],
-        ['2.7.1 Forward Action Requests', 'Khong'],
-        ['2.8 Eligibility for Validation Activities', 'Du dieu kien'],
+        ['2.2 Method and Criteria', 'IoT data collection, farm diary records, laboratory soil analysis, IPCC Tier 1 emission factors applied'],
+        ['2.3 Document Review', 'Farm diary records, SOC analysis results, IoT data, farm maps'],
+        ['2.4 Interviews', 'Participating farm households'],
+        ['2.5 Site Visits', 'Periodic field monitoring as per monitoring plan'],
+        ['2.7 Resolution of Findings', 'No abnormal findings during the reporting period'],
+        ['2.7.1 Forward Action Requests', 'None'],
+        ['2.8 Eligibility for Validation Activities', 'Eligible'],
         [],
-        ['3.1 Participation under Other GHG Programs', 'Khong tham gia chuong trinh GHG nao khac'],
-        ['3.2 Methodology Deviations', 'Khong co sai lech phuong phap luan'],
-        ['3.3 Minor Changes to Project Description', 'Khong co thay doi'],
-        ['3.4 Project Description Deviations', 'Khong co'],
-        ['3.5 New Project Activity Instances', 'Khong co'],
+        ['3.1 Participation under Other GHG Programs', 'Not participating in any other GHG programs'],
+        ['3.2 Methodology Deviations', 'No methodology deviations'],
+        ['3.3 Minor Changes to Project Description', 'No changes'],
+        ['3.4 Project Description Deviations', 'None'],
+        ['3.5 New Project Activity Instances', 'None'],
         ['3.6 Baseline Reassessment — Did the project undergo baseline reassessment?', 'No'],
         [],
-        ['4.1 Audit history (VCS, 4.1)', `Ky dau tien: ${yr}-01-01 den ${today}`],
-        ['4.2 Summary of Project Benefits', `Giam phat thai ${em.totalProject.toFixed(4)} tCO2e. Tang tru luong carbon dat DSOC=${soc.delta.toFixed(4)} tC/ha.`],
-        ['4.3.1 Implementation Status', `Trien khai dung tien do. ${diaries.length} nhat ky da ghi nhan.`],
-        ['4.3.2 Stakeholder Identification', 'Nong ho, to chuc dia phuong, co quan quan ly nha nuoc'],
-        ['4.3.3 Stakeholder Consultation', 'Tu van dinh ky hang quy voi cac nong ho tham gia'],
-        ['4.3.4 Stakeholder Access to Information', 'Cong khai qua he thong ExAS MRV'],
-        ['4.3.9 Risks to the Project', 'Thien tai, bien dong gia nong san. Bien phap giam thieu da duoc thiet lap.'],
-        ['4.3.10 Anti-discrimination', 'Chinh sach khong phan biet doi xu duoc ap dung'],
-        ['4.3.11 Worker Relations', 'Lao dong tu nguyen, dung luat lao dong Viet Nam'],
-        ['4.3.12 Management Capacity', 'He thong MRV tu dong hoa, nhan su duoc dao tao'],
-        ['4.3.18 Identification of Illegal Activities', 'Khong phat hien hoat dong bat hop phap'],
+        ['4.1 Audit history (VCS, 4.1)', `First period: ${yr}-01-01 to ${today}`],
+        ['4.2 Summary of Project Benefits', `Emission reduction: ${em.totalProject.toFixed(4)} tCO2e. Soil carbon stock increase: ΔSOC=${soc.delta.toFixed(4)} tC/ha.`],
+        ['4.3.1 Implementation Status', `Implementation on schedule. ${diaries.length} diary records registered.`],
+        ['4.3.2 Stakeholder Identification', 'Farm households, local organisations, government management agencies'],
+        ['4.3.3 Stakeholder Consultation', 'Quarterly consultation with participating farm households'],
+        ['4.3.4 Stakeholder Access to Information', 'Publicly accessible via ExAS MRV system'],
+        ['4.3.9 Risks to the Project', 'Natural disasters, agricultural price fluctuations. Mitigation measures established.'],
+        ['4.3.10 Anti-discrimination', 'Non-discrimination policy applied'],
+        ['4.3.11 Worker Relations', 'Voluntary labour, compliant with Vietnamese labour law'],
+        ['4.3.12 Management Capacity', 'Automated MRV system, trained personnel'],
+        ['4.3.18 Identification of Illegal Activities', 'No illegal activities identified'],
         [],
-        ['4.4.1 Accuracy of Reduction and Removal Calculations', `EFF=${em.eff.toFixed(4)} tCO2e; EL=${em.el.toFixed(4)} tCO2e; N2O=${em.n2o.toFixed(4)} tCO2e/ha; DSOC=${soc.delta.toFixed(4)} tC/ha`],
-        ['4.4.2 Quality of Evidence for GHG', 'Du lieu tu nhat ky canh tac so, phan tich dat phong lab kiem dinh, he so IPCC Tier 1'],
-        ['4.4.3 Non-Permanence Risk Analysis', 'Chua thuc hien phan tich rui ro khong thuong tru — can cap nhat truoc khi phat hanh VCU'],
-        ['4.4.4 Dissemination of Monitoring Plan', 'Ke hoach giam sat da duoc pho bien den cac nong ho tham gia'],
+        ['4.4.1 Accuracy of Reduction and Removal Calculations', `EFF=${em.eff.toFixed(4)} tCO2e; EL=${em.el.toFixed(4)} tCO2e; N2O=${em.n2o.toFixed(4)} tCO2e/ha; ΔSOC=${soc.delta.toFixed(4)} tC/ha`],
+        ['4.4.2 Quality of Evidence for GHG', 'Data from digital farm diaries, certified laboratory soil analysis, IPCC Tier 1 emission factors'],
+        ['4.4.3 Non-Permanence Risk Analysis', 'Non-permanence risk analysis not yet completed — must be updated before VCU issuance'],
+        ['4.4.4 Dissemination of Monitoring Plan', 'Monitoring plan disseminated to all participating farm households'],
         [],
-        ['4.5.1 Community Impacts', 'Tac dong tich cuc den thu nhap nong ho, bao ve moi truong'],
-        ['4.5.2 Negative Community Impact Mitigation', 'Khong co tac dong tieu cuc dang ke'],
-        ['4.5.3 Net Positive Community Well-being', 'Tang thu nhap tu tin chi carbon, tap huan ky thuat'],
-        ['4.6.1 Biodiversity Changes', 'Vuon dua canh tac ben vung, han che thuoc tru sau'],
-        ['4.6.2 Mitigation Actions', 'Ap dung IPM, han che hoa chat'],
-        ['4.6.6 GMO Exclusion', 'Khong su dung giong bien doi gen'],
+        ['4.5.1 Community Impacts', 'Positive impact on farm household income and environmental protection'],
+        ['4.5.2 Negative Community Impact Mitigation', 'No significant negative impacts'],
+        ['4.5.3 Net Positive Community Well-being', 'Increased income from carbon credits, technical training provided'],
+        ['4.6.1 Biodiversity Changes', 'Sustainable coconut farming, reduced pesticide use'],
+        ['4.6.2 Mitigation Actions', 'IPM applied, chemical inputs minimised'],
+        ['4.6.6 GMO Exclusion', 'No genetically modified varieties used'],
         [],
-        ['5.1 Verification Summary', `Tong phat thai du an (EFF+EL): ${em.totalProject.toFixed(4)} tCO2e. N2O: ${em.n2o.toFixed(4)} tCO2e/ha. DSOC: ${soc.delta.toFixed(4)} tC/ha. Tong mau: ${soc.totalSamples}.`],
-        ['5.2 Verification Conclusion', 'Du an tuan thu phuong phap luan VM0042. Du lieu duoc thu thap va tinh toan dung quy trinh. Khuyen nghi: cap nhat phan tich rui ro truoc ky tiep theo.'],
+        ['5.1 Verification Summary', `Total project emissions (EFF+EL): ${em.totalProject.toFixed(4)} tCO2e. N2O: ${em.n2o.toFixed(4)} tCO2e/ha. ΔSOC: ${soc.delta.toFixed(4)} tC/ha. Total samples: ${soc.totalSamples}.`],
+        ['5.2 Verification Conclusion', 'Project complies with VM0042 methodology. Data collected and calculated following correct procedures. Recommendation: update non-permanence risk analysis before next period.'],
         ['The non-permanence risk rating (%)', '--'],
         [],
         ['Registry — Document Issue Date', today],
@@ -681,9 +681,9 @@ function exportExcel() {
         ['Field name', '2.6 Public Comments'],
         [],
         ['Field', 'Value'],
-        ['Comments received', 'Khong co y kien phan hoi tu cong dong trong ky bao cao'],
-        ['Actions taken by the project proponent', 'Khong ap dung'],
-        ['Evidence gathering activities, evidence checked, and assessment conclusion', 'Khong co khieu nai hoac y kien duoc ghi nhan trong ky giam sat'],
+        ['Comments received', 'No public comments received during the reporting period'],
+        ['Actions taken by the project proponent', 'Not applicable'],
+        ['Evidence gathering activities, evidence checked, and assessment conclusion', 'No complaints or comments recorded during the monitoring period'],
     ]);
 
     // ── Sheet 5: Implementation Status ──
@@ -692,9 +692,9 @@ function exportExcel() {
         ['Field name', 'Implementation Status'],
         [],
         ['Field', 'Value'],
-        ['Project Activity', `Canh tac nong nghiep ben vung — ${projectName}`],
-        ['Material misstatements — Assessment and conclusion', 'Khong phat hien sai sot trong yeu trong du lieu giam sat'],
-        ['Monitoring plan implementation status — Assessment and conclusion', `Ke hoach giam sat dang duoc thuc hien dung tien do. ${diaries.length} nhat ky canh tac, ${socData.length} mau SOC da ghi nhan.`],
+        ['Project Activity', `Sustainable agricultural management — ${projectName}`],
+        ['Material misstatements — Assessment and conclusion', 'No material misstatements identified in monitoring data'],
+        ['Monitoring plan implementation status — Assessment and conclusion', `Monitoring plan being implemented on schedule. ${diaries.length} farm diary records and ${socData.length} SOC samples recorded.`],
     ]);
 
     // ── Sheet 6: Grievances ──
@@ -703,8 +703,8 @@ function exportExcel() {
         ['Field name', 'Grievances'],
         [],
         ['Field', 'Value'],
-        ['Grievance received and steps taken to resolve — Evidence and conclusion', 'Khong co khieu nai trong ky bao cao'],
-        ['Grievance redress procedure — Evidence and conclusion', 'Quy trinh giai quyet khieu nai duoc thiet lap, thong bao den cac ben lien quan, van hanh hieu qua'],
+        ['Grievance received and steps taken to resolve — Evidence and conclusion', 'No grievances received during the reporting period'],
+        ['Grievance redress procedure — Evidence and conclusion', 'Grievance redress procedure established, communicated to all stakeholders, operating effectively'],
     ]);
 
     // ── Sheet 7: GHG Emissions (data from system) ──
