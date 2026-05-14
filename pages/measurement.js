@@ -1427,3 +1427,91 @@ function runDialecticalAnalysis() {
 
     body.innerHTML = metricCards + scenarioHTML + infoNote;
 }
+
+// Hàm dùng chung — trả về HTML phân tích 3 biến cho 1 nông hộ (dùng trong báo cáo đề xuất canh tác)
+function buildDialecticalHTML(farmNameFilter) {
+    const C = { success:'#1e8449', warning:'#e67e22', danger:'#c0392b', info:'#2980b9' };
+    const farms   = JSON.parse(localStorage.getItem('mrv_farms')   || '[]');
+    const allDiaries = JSON.parse(localStorage.getItem('mrv_diaries') || '[]');
+    const allSoc     = JSON.parse(localStorage.getItem('mrv_soc')     || '[]');
+    const diaries = farmNameFilter ? allDiaries.filter(d => d.farm === farmNameFilter || d.farmCode === farmNameFilter) : allDiaries;
+    const soc     = farmNameFilter ? allSoc.filter(s => s.farm === farmNameFilter) : allSoc;
+
+    const endEntries   = soc.filter(e => !e.isBeginning);
+    const beginEntries = soc.filter(e => e.isBeginning);
+
+    let biomassScore = null;
+    const entriesWithBio = endEntries.filter(e => e.nitrogen || e.fulvic || e.humic || e.vsv || e.clay);
+    if (entriesWithBio.length > 0) biomassScore = computeBiomassScore(entriesWithBio[entriesWithBio.length - 1]);
+
+    const avg = arr => arr.length ? arr.reduce((s,e) => s + parseFloat(e.socMassVM0042||0), 0) / arr.length : 0;
+    const avgBeginSOC = avg(beginEntries.filter(e => e.socMassVM0042));
+    const avgEndSOC   = avg(endEntries.filter(e => e.socMassVM0042));
+    const deltaSOC    = avgEndSOC - avgBeginSOC;
+
+    const farmArea = farms.find(f => f.name === farmNameFilter)?.area || farms.reduce((s,f) => s + (parseFloat(f.area)||0), 0) || 4.6;
+    const totalN   = diaries.reduce((s,d) => s + (parseFloat(d.nKg)||0), 0);
+    const totalLime = diaries.reduce((s,d) => s + (parseFloat(d.limestone)||0), 0);
+    const totalDolo = diaries.reduce((s,d) => s + (parseFloat(d.dolomite)||0), 0);
+    const n2o = (totalN * 0.01 * (44/28) * 265) / 1000;
+    const co2Lime = totalLime * 0.44 + totalDolo * 0.52;
+    const totalEmi = n2o + co2Lime;
+    const nPerHa = totalN / farmArea;
+    const emiPerHa = totalEmi / farmArea;
+
+    const bioCol = biomassScore == null ? '#888' : biomassScore > 65 ? C.success : biomassScore > 40 ? C.warning : C.danger;
+    const socCol = deltaSOC > 0.001 ? C.success : deltaSOC < -0.001 ? C.danger : C.warning;
+    const emiCol = emiPerHa > 0.75 ? C.danger : emiPerHa > 0.525 ? C.warning : C.success;
+
+    let scenario;
+    if (biomassScore !== null) {
+        if (nPerHa < 85 && deltaSOC <= 0.001 && biomassScore < 62) scenario = 'TH1';
+        else if (nPerHa > 175 && emiPerHa > 0.75 && biomassScore < 62) scenario = 'TH2';
+        else if (emiPerHa > 0.525 && deltaSOC < 0.005 && biomassScore < 62) scenario = 'TH3';
+        else scenario = 'OK';
+    } else {
+        scenario = nPerHa < 85 && deltaSOC <= 0 ? 'TH1' : (nPerHa > 175 || emiPerHa > 0.75) ? 'TH2' : 'OK';
+    }
+
+    const badges = { TH1: {col:C.warning, txt:'TH1 — Vườn chưa đủ dinh dưỡng'}, TH2: {col:C.danger, txt:'TH2 — Bón phân vô cơ quá mức'}, TH3: {col:C.info, txt:'TH3 — Cần chuyển đổi hữu cơ'}, OK: {col:C.success, txt:'Trạng thái tốt'} };
+    const sc = badges[scenario];
+
+    return `
+    <div style="margin-top:24px;border-top:2px solid #1a5276;padding-top:16px;">
+        <h2 style="color:#1a5276;font-size:14px;border-bottom:1px solid #ddd;padding-bottom:6px;margin-bottom:14px;">5. PHÂN TÍCH MỐI QUAN HỆ BIỆN CHỨNG 3 BIẾN SỐ</h2>
+        <table style="width:100%;border-collapse:collapse;margin-bottom:14px;font-size:12px;">
+            <thead><tr style="background:#1a5276;color:white;">
+                <th style="padding:8px 12px;text-align:left;">Biến số</th>
+                <th style="padding:8px 12px;text-align:center;">Giá trị</th>
+                <th style="padding:8px 12px;text-align:left;">Đánh giá</th>
+            </tr></thead>
+            <tbody>
+                <tr style="background:#f8f9fa;">
+                    <td style="padding:8px 12px;border:1px solid #ddd;font-weight:bold;">Chỉ số sinh khối tàn dư</td>
+                    <td style="padding:8px 12px;border:1px solid #ddd;text-align:center;font-weight:bold;color:${bioCol};">${biomassScore != null ? biomassScore.toFixed(0)+'%' : '--'}</td>
+                    <td style="padding:8px 12px;border:1px solid #ddd;">${biomassScore == null ? 'Chưa có dữ liệu sinh khối' : biomassScore > 65 ? 'Tốt — hệ sinh thái ổn định' : biomassScore > 40 ? 'Trung bình — cần cải thiện' : 'Thấp — cần can thiệp'}</td>
+                </tr>
+                <tr>
+                    <td style="padding:8px 12px;border:1px solid #ddd;font-weight:bold;">ΔSOC (VM0042)</td>
+                    <td style="padding:8px 12px;border:1px solid #ddd;text-align:center;font-weight:bold;color:${socCol};">${avgEndSOC > 0 ? (deltaSOC >= 0 ? '+':'') + deltaSOC.toFixed(4)+' tC/ha' : '--'}</td>
+                    <td style="padding:8px 12px;border:1px solid #ddd;">${deltaSOC > 0.001 ? 'Đất đang hấp thụ carbon' : deltaSOC < -0.001 ? 'Đất đang mất carbon' : 'Carbon ổn định'}</td>
+                </tr>
+                <tr style="background:#f8f9fa;">
+                    <td style="padding:8px 12px;border:1px solid #ddd;font-weight:bold;">Phát thải phân bón</td>
+                    <td style="padding:8px 12px;border:1px solid #ddd;text-align:center;font-weight:bold;color:${emiCol};">${emiPerHa.toFixed(3)} tCO₂e/ha</td>
+                    <td style="padding:8px 12px;border:1px solid #ddd;">N₂O: ${n2o.toFixed(3)} t + Vôi/Dolomite: ${co2Lime.toFixed(3)} t</td>
+                </tr>
+            </tbody>
+        </table>
+        <div style="background:${sc.col}18;border:1.5px solid ${sc.col};border-radius:8px;padding:12px 16px;">
+            <div style="font-size:12px;font-weight:700;color:${sc.col};margin-bottom:6px;">${sc.txt}</div>
+            <div style="font-size:11px;color:#444;">
+                N bón = ${totalN.toFixed(0)} kg (${nPerHa.toFixed(0)} kg/ha) &nbsp;|&nbsp;
+                ΔSOC = ${deltaSOC.toFixed(4)} tC/ha &nbsp;|&nbsp;
+                Phát thải = ${totalEmi.toFixed(3)} tCO₂e &nbsp;|&nbsp;
+                Diện tích = ${parseFloat(farmArea).toFixed(2)} ha
+                ${biomassScore != null ? ` &nbsp;|&nbsp; Sinh khối = ${biomassScore.toFixed(0)}/100` : ''}
+            </div>
+        </div>
+    </div>`;
+}

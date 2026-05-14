@@ -1552,6 +1552,8 @@ function generateRecommendReport() {
             </tbody>
         </table>
 
+        ${typeof buildDialecticalHTML === 'function' ? buildDialecticalHTML(farmName) : ''}
+
         <!-- Footer -->
         <div style="border-top:2px solid #1e8449;padding-top:12px;display:flex;justify-content:space-between;font-size:11px;color:#777;">
             <div>ExAS MRV System — Hệ thống Đo lường, Báo cáo & Xác minh</div>
