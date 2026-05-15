@@ -127,7 +127,7 @@ img{max-width:100%;display:block;}
 .topbar-icon-btn:hover{background:var(--surface);color:var(--text);}
 .notification-badge{position:absolute;top:4px;right:4px;width:16px;height:16px;background:var(--danger);border-radius:50%;font-size:10px;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;}
 
-.page-content{flex:1;padding:24px;overflow-y:auto;}
+.page-content{flex:1;padding:16px;overflow-y:auto;}
 
 /* ========== COMMON COMPONENTS ========== */
 .page-header{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:24px;flex-wrap:wrap;}
@@ -136,7 +136,7 @@ img{max-width:100%;display:block;}
 .page-desc{color:var(--text-secondary);font-size:13px;}
 .page-actions{display:flex;gap:8px;align-items:center;flex-shrink:0;flex-wrap:wrap;}
 
-.card{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:20px;transition:var(--transition);}
+.card{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:16px;transition:var(--transition);}
 .card:hover{border-color:var(--border-light);}
 .card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;}
 .card-title{font-size:15px;font-weight:600;display:flex;align-items:center;gap:8px;}
@@ -163,9 +163,9 @@ img{max-width:100%;display:block;}
 .grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;}
 
 /* Tables */
-.table-wrapper{overflow-x:auto;-webkit-overflow-scrolling:touch;width:100%;}
+.table-wrapper{overflow-x:auto !important;-webkit-overflow-scrolling:touch;width:100%;display:block;}
 .data-table{width:100%;border-collapse:separate;border-spacing:0;}
-.table-wrapper>.data-table{width:max-content;min-width:100%;}
+.table-wrapper>.data-table{width:max-content !important;min-width:100% !important;}
 .data-table thead th{background:var(--surface);padding:12px 16px;text-align:left;font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-secondary);border-bottom:1px solid var(--border);white-space:nowrap;}
 .data-table thead th:first-child{border-radius:var(--radius-sm) 0 0 0;}
 .data-table thead th:last-child{border-radius:0 var(--radius-sm) 0 0;}
