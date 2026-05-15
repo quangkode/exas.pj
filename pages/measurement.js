@@ -198,8 +198,19 @@ function deleteDroneEntry(id) {
 function renderSoilData(container) {
     container.innerHTML = `
         <div class="page-header">
-            <h1 class="page-title">Phân tích đất (SOC)</h1>
-            <p class="page-desc">Dữ liệu các-bon hữu cơ trong đất (Soil Organic Carbon) từ phòng Lab — theo VM0042</p>
+            <div class="page-header-text">
+                <h1 class="page-title">Phân tích đất (SOC)</h1>
+                <p class="page-desc">Dữ liệu các-bon hữu cơ trong đất (Soil Organic Carbon) từ phòng Lab — theo VM0042</p>
+            </div>
+            <div class="page-actions">
+                <button class="btn btn-secondary" onclick="downloadSOCTemplate()" title="Tải file CSV mẫu" style="border-color:var(--text-muted);color:var(--text-muted);">
+                    <i class="fas fa-download"></i> Template
+                </button>
+                <button class="btn btn-secondary" onclick="openSOCImportModal()" style="border-color:var(--info);color:var(--info);">
+                    <i class="fas fa-file-upload"></i> Nhập từ file
+                </button>
+                <button class="btn btn-primary" onclick="openSOCModal()"><i class="fas fa-plus"></i> Thêm mẫu</button>
+            </div>
         </div>
         <div class="stats-grid">
             <div class="stat-card">
@@ -222,16 +233,8 @@ function renderSoilData(container) {
             </div>
         </div>
         <div class="filter-bar">
-            <select id="soc-farm-filter"><option value="">Tất cả nông hộ</option></select>
+            <select id="soc-farm-filter" onchange="loadSOCData()"><option value="">Tất cả nông hộ</option></select>
             <select><option value="">Tất cả lớp đất</option><option>0-15cm</option><option>15-30cm</option><option>30-50cm</option></select>
-            <div style="flex:1;"></div>
-            <button class="btn btn-secondary" onclick="downloadSOCTemplate()" title="Tải file CSV mẫu" style="border-color:var(--text-muted);color:var(--text-muted);">
-                <i class="fas fa-download"></i> Template
-            </button>
-            <button class="btn btn-secondary" onclick="openSOCImportModal()" style="border-color:var(--info);color:var(--info);">
-                <i class="fas fa-file-upload"></i> Nhập từ file
-            </button>
-            <button class="btn btn-primary" onclick="openSOCModal()"><i class="fas fa-plus"></i> Thêm mẫu phân tích</button>
         </div>
         <div class="grid-2" style="margin-top:20px;">
             <div class="card">

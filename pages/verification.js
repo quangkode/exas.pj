@@ -2,15 +2,18 @@
 function renderEvidence(container) {
     container.innerHTML = `
         <div class="page-header">
-            <h1 class="page-title">Bằng chứng số</h1>
-            <p class="page-desc">Lưu trữ hình ảnh, video và dữ liệu thô phục vụ thẩm định</p>
+            <div class="page-header-text">
+                <h1 class="page-title">Bằng chứng số</h1>
+                <p class="page-desc">Lưu trữ hình ảnh, video và dữ liệu thô phục vụ thẩm định</p>
+            </div>
+            <div class="page-actions">
+                <button class="btn btn-primary" onclick="openEvidenceModal()"><i class="fas fa-upload"></i> Tải lên</button>
+            </div>
         </div>
         <div class="filter-bar">
             <div class="search-input"><i class="fas fa-search"></i><input type="text" placeholder="Tìm kiếm..."></div>
             <select><option value="">Tất cả loại</option><option>Hình ảnh</option><option>Video</option><option>Tài liệu</option></select>
             <select><option value="">Tất cả nông hộ</option></select>
-            <div style="flex:1;"></div>
-            <button class="btn btn-primary" onclick="openEvidenceModal()"><i class="fas fa-upload"></i> Tải lên</button>
         </div>
         <div class="card">
             <div class="upload-area" id="evidence-upload-area">

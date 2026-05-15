@@ -2,8 +2,21 @@
 function renderFarmDiary(container) {
     container.innerHTML = `
         <div class="page-header">
-            <h1 class="page-title">Nhật ký canh tác</h1>
-            <p class="page-desc">Ghi nhận hoạt động canh tác — nguồn dữ liệu cho tính toán phát thải CO₂/N₂O</p>
+            <div class="page-header-text">
+                <h1 class="page-title">Nhật ký canh tác</h1>
+                <p class="page-desc">Ghi nhận hoạt động canh tác — nguồn dữ liệu cho tính toán phát thải CO₂/N₂O</p>
+            </div>
+            <div class="page-actions">
+                <button class="btn btn-secondary" onclick="downloadDiaryTemplate()" style="border-color:var(--text-muted);color:var(--text-muted);">
+                    <i class="fas fa-download"></i> Template
+                </button>
+                <button class="btn btn-secondary" onclick="openDiaryImportModal()" style="border-color:var(--info);color:var(--info);">
+                    <i class="fas fa-file-upload"></i> Nhập từ file
+                </button>
+                <button class="btn btn-primary" onclick="openDiaryModal()">
+                    <i class="fas fa-plus"></i> Thêm nhật ký
+                </button>
+            </div>
         </div>
         <div class="filter-bar">
             <div class="search-input">
@@ -13,16 +26,6 @@ function renderFarmDiary(container) {
             <select id="diary-filter-farm" onchange="loadDiaryData()">
                 <option value="">Tất cả nông hộ</option>
             </select>
-            <div style="flex:1;"></div>
-            <button class="btn btn-secondary" onclick="downloadDiaryTemplate()" style="border-color:var(--text-muted);color:var(--text-muted);">
-                <i class="fas fa-download"></i> Template
-            </button>
-            <button class="btn btn-secondary" onclick="openDiaryImportModal()" style="border-color:var(--info);color:var(--info);">
-                <i class="fas fa-file-upload"></i> Nhập từ file
-            </button>
-            <button class="btn btn-primary" onclick="openDiaryModal()">
-                <i class="fas fa-plus"></i> Thêm nhật ký
-            </button>
         </div>
         <div class="card">
             <div class="table-wrapper" style="overflow-x:auto;">
