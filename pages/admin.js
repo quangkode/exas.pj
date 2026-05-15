@@ -1,35 +1,38 @@
 /* ========== USER MANAGEMENT - Admin only ========== */
-function renderUserMgmt(container) {
-    const users = JSON.parse(localStorage.getItem('mrv_users_list') || JSON.stringify([
-        { id: 1, username: 'giamsat', name: 'Nguyễn Văn An', role: 'supervisor', status: 'active' },
-        { id: 2, username: 'giamsat2', name: 'Trần Thị Bình', role: 'supervisor', status: 'active' },
-        { id: 3, username: 'admin', name: 'Trần Minh Quang', role: 'admin', status: 'active' }
-    ]));
+const DEFAULT_USERS_LIST = [
+    { id: 1, username: 'giamsat',  name: 'Nguyễn Văn An',   role: 'supervisor', status: 'active', builtin: true },
+    { id: 2, username: 'giamsat2', name: 'Trần Thị Bình',   role: 'supervisor', status: 'active', builtin: true },
+    { id: 3, username: 'admin',    name: 'Trần Minh Quang',  role: 'admin',      status: 'active', builtin: true }
+];
 
+function getUserList() {
+    return JSON.parse(localStorage.getItem('mrv_users_list') || JSON.stringify(DEFAULT_USERS_LIST));
+}
+
+function renderUserMgmt(container) {
     container.innerHTML = `
         <div class="page-header">
-            <h1 class="page-title">Quản lý người dùng</h1>
-            <p class="page-desc">Phân quyền truy cập hệ thống (Role-based Access Control)</p>
+            <div class="page-header-text">
+                <h1 class="page-title">Quản lý người dùng</h1>
+                <p class="page-desc">Phân quyền truy cập hệ thống (Role-based Access Control)</p>
+            </div>
+            <div class="page-actions">
+                <button class="btn btn-primary" onclick="openAddUserModal()"><i class="fas fa-user-plus"></i> Thêm người dùng</button>
+            </div>
         </div>
         <div class="filter-bar">
-            <div class="search-input"><i class="fas fa-search"></i><input type="text" placeholder="Tìm người dùng..."></div>
-            <select><option value="">Tất cả vai trò</option><option>Giám sát viên</option><option>Quản trị viên</option></select>
-            <div style="flex:1;"></div>
-            <button class="btn btn-primary" onclick="openAddUserModal()"><i class="fas fa-user-plus"></i> Thêm người dùng</button>
+            <div class="search-input"><i class="fas fa-search"></i><input type="text" id="user-search" placeholder="Tìm người dùng..." oninput="filterUserTable()"></div>
+            <select id="user-role-filter" onchange="filterUserTable()">
+                <option value="">Tất cả vai trò</option>
+                <option value="supervisor">Giám sát viên</option>
+                <option value="admin">Quản trị viên</option>
+            </select>
         </div>
         <div class="card">
             <div class="table-wrapper">
-                <table class="data-table" style="width:max-content;min-width:500px;">
+                <table class="data-table" style="width:max-content;min-width:560px;">
                     <thead><tr><th>Tài khoản</th><th>Họ tên</th><th>Vai trò</th><th>Trạng thái</th><th></th></tr></thead>
-                    <tbody>
-                        ${users.map(u => `<tr>
-                            <td><code style="background:var(--surface);padding:2px 8px;border-radius:4px;">${u.username}</code></td>
-                            <td>${u.name}</td>
-                            <td><span class="badge ${u.role==='admin'?'badge-red':'badge-blue'}">${u.role==='admin'?'Quản trị viên':'Giám sát viên'}</span></td>
-                            <td><span class="badge badge-green"><i class="fas fa-circle" style="font-size:6px;"></i> Hoạt động</span></td>
-                            <td><button class="btn-icon" title="Chỉnh sửa"><i class="fas fa-edit"></i></button></td>
-                        </tr>`).join('')}
-                    </tbody>
+                    <tbody id="user-table-body"></tbody>
                 </table>
             </div>
         </div>
@@ -41,26 +44,217 @@ function renderUserMgmt(container) {
                     <tbody>
                         <tr><td>Xem Dashboard</td><td><i class="fas fa-check" style="color:var(--success);"></i></td><td><i class="fas fa-check" style="color:var(--success);"></i></td></tr>
                         <tr><td>Nhật ký canh tác (Thêm/Sửa)</td><td><i class="fas fa-check" style="color:var(--success);"></i></td><td><i class="fas fa-check" style="color:var(--success);"></i></td></tr>
-                        <tr><td>Dữ liệu IoT (Xem)</td><td><i class="fas fa-check" style="color:var(--success);"></i></td><td><i class="fas fa-check" style="color:var(--success);"></i></td></tr>
-                        <tr><td>Dữ liệu Drone/LiDAR</td><td><i class="fas fa-check" style="color:var(--success);"></i></td><td><i class="fas fa-check" style="color:var(--success);"></i></td></tr>
-                        <tr><td>Phân tích đất SOC</td><td><i class="fas fa-check" style="color:var(--success);"></i></td><td><i class="fas fa-check" style="color:var(--success);"></i></td></tr>
-                        <tr><td>Bằng chứng số</td><td><i class="fas fa-check" style="color:var(--success);"></i></td><td><i class="fas fa-check" style="color:var(--success);"></i></td></tr>
-                        <tr><td>Bản đồ nông hộ</td><td><i class="fas fa-check" style="color:var(--success);"></i></td><td><i class="fas fa-check" style="color:var(--success);"></i></td></tr>
-                        <tr><td>Báo cáo VM0042</td><td><i class="fas fa-times" style="color:var(--danger);"></i></td><td><i class="fas fa-check" style="color:var(--success);"></i></td></tr>
-                        <tr><td>Tính toán phát thải</td><td><i class="fas fa-times" style="color:var(--danger);"></i></td><td><i class="fas fa-check" style="color:var(--success);"></i></td></tr>
-                        <tr><td>Audit Log</td><td><i class="fas fa-times" style="color:var(--danger);"></i></td><td><i class="fas fa-check" style="color:var(--success);"></i></td></tr>
-                        <tr><td>Cổng VVB</td><td><i class="fas fa-times" style="color:var(--danger);"></i></td><td><i class="fas fa-check" style="color:var(--success);"></i></td></tr>
-                        <tr><td>Quản lý người dùng</td><td><i class="fas fa-times" style="color:var(--danger);"></i></td><td><i class="fas fa-check" style="color:var(--success);"></i></td></tr>
-                        <tr><td>Quản lý nông hộ</td><td><i class="fas fa-times" style="color:var(--danger);"></i></td><td><i class="fas fa-check" style="color:var(--success);"></i></td></tr>
+                        <tr><td>Dữ liệu IoT / Drone / SOC</td><td><i class="fas fa-check" style="color:var(--success);"></i></td><td><i class="fas fa-check" style="color:var(--success);"></i></td></tr>
+                        <tr><td>Bằng chứng số / Bản đồ</td><td><i class="fas fa-check" style="color:var(--success);"></i></td><td><i class="fas fa-check" style="color:var(--success);"></i></td></tr>
+                        <tr><td>Báo cáo VM0042 / Tính toán</td><td><i class="fas fa-times" style="color:var(--danger);"></i></td><td><i class="fas fa-check" style="color:var(--success);"></i></td></tr>
+                        <tr><td>Audit Log / Cổng VVB</td><td><i class="fas fa-times" style="color:var(--danger);"></i></td><td><i class="fas fa-check" style="color:var(--success);"></i></td></tr>
+                        <tr><td>Quản lý người dùng / Nông hộ</td><td><i class="fas fa-times" style="color:var(--danger);"></i></td><td><i class="fas fa-check" style="color:var(--success);"></i></td></tr>
                         <tr><td>Cài đặt hệ thống</td><td><i class="fas fa-times" style="color:var(--danger);"></i></td><td><i class="fas fa-check" style="color:var(--success);"></i></td></tr>
                     </tbody>
                 </table>
             </div>
         </div>
+
+        <!-- Modal thêm/sửa người dùng -->
+        <div class="modal-overlay" id="user-modal">
+            <div class="modal" style="max-width:500px;">
+                <div class="modal-header">
+                    <h3 id="user-modal-title"><i class="fas fa-user-plus" style="color:var(--primary-light);margin-right:8px;"></i> Thêm người dùng</h3>
+                    <button class="modal-close" onclick="closeUserModal()"><i class="fas fa-times"></i></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" id="user-edit-id">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Tên đăng nhập <span style="color:var(--danger)">*</span></label>
+                            <input type="text" id="user-username" placeholder="VD: giamsat3" autocomplete="off">
+                        </div>
+                        <div class="form-group">
+                            <label>Họ và tên <span style="color:var(--danger)">*</span></label>
+                            <input type="text" id="user-fullname" placeholder="Họ tên đầy đủ">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Vai trò <span style="color:var(--danger)">*</span></label>
+                        <select id="user-role">
+                            <option value="supervisor">Giám sát viên</option>
+                            <option value="admin">Quản trị viên</option>
+                        </select>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label id="user-pwd-label">Mật khẩu <span style="color:var(--danger)">*</span></label>
+                            <input type="password" id="user-password" placeholder="Tối thiểu 6 ký tự" autocomplete="new-password">
+                        </div>
+                        <div class="form-group">
+                            <label>Xác nhận mật khẩu</label>
+                            <input type="password" id="user-password2" placeholder="Nhập lại mật khẩu">
+                        </div>
+                    </div>
+                    <div id="user-pwd-note" style="font-size:11px;color:var(--text-muted);margin-top:-8px;display:none;">
+                        Để trống nếu không muốn thay đổi mật khẩu
+                    </div>
+                    <div id="user-modal-error" style="color:var(--danger);font-size:12px;margin-top:8px;display:none;"></div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" onclick="closeUserModal()">Hủy</button>
+                    <button class="btn btn-primary" onclick="saveUser()"><i class="fas fa-save"></i> Lưu</button>
+                </div>
+            </div>
+        </div>
     `;
+    loadUserTable();
 }
 
-function openAddUserModal() { alert('Chức năng thêm người dùng mới (tạo tài khoản giám sát viên/quản trị viên).'); }
+function loadUserTable() {
+    const users = getUserList();
+    const search = document.getElementById('user-search')?.value.toLowerCase() || '';
+    const roleFilter = document.getElementById('user-role-filter')?.value || '';
+    const tbody = document.getElementById('user-table-body');
+    if (!tbody) return;
+
+    const filtered = users.filter(u => {
+        const matchSearch = !search || u.username.toLowerCase().includes(search) || u.name.toLowerCase().includes(search);
+        const matchRole = !roleFilter || u.role === roleFilter;
+        return matchSearch && matchRole;
+    });
+
+    tbody.innerHTML = filtered.length === 0
+        ? `<tr><td colspan="5"><div class="empty-state"><i class="fas fa-user-slash"></i><p>Không tìm thấy người dùng</p></div></td></tr>`
+        : filtered.map(u => `<tr>
+            <td><code style="background:var(--surface);padding:2px 8px;border-radius:4px;">${u.username}</code></td>
+            <td><strong>${u.name}</strong></td>
+            <td><span class="badge ${u.role === 'admin' ? 'badge-red' : 'badge-blue'}">${u.role === 'admin' ? 'Quản trị viên' : 'Giám sát viên'}</span></td>
+            <td><span class="badge badge-green"><i class="fas fa-circle" style="font-size:6px;"></i> Hoạt động</span></td>
+            <td style="display:flex;gap:6px;">
+                <button class="btn-icon" onclick="openEditUserModal(${u.id})" title="Sửa"><i class="fas fa-edit"></i></button>
+                ${u.builtin ? '' : `<button class="btn-icon" onclick="deleteUser(${u.id})" title="Xóa" style="color:var(--danger);"><i class="fas fa-trash"></i></button>`}
+            </td>
+        </tr>`).join('');
+}
+
+function filterUserTable() { loadUserTable(); }
+
+function openAddUserModal() {
+    document.getElementById('user-modal-title').innerHTML = '<i class="fas fa-user-plus" style="color:var(--primary-light);margin-right:8px;"></i> Thêm người dùng';
+    document.getElementById('user-edit-id').value = '';
+    document.getElementById('user-username').value = '';
+    document.getElementById('user-username').removeAttribute('readonly');
+    document.getElementById('user-fullname').value = '';
+    document.getElementById('user-role').value = 'supervisor';
+    document.getElementById('user-password').value = '';
+    document.getElementById('user-password2').value = '';
+    document.getElementById('user-pwd-label').innerHTML = 'Mật khẩu <span style="color:var(--danger)">*</span>';
+    document.getElementById('user-pwd-note').style.display = 'none';
+    document.getElementById('user-modal-error').style.display = 'none';
+    document.getElementById('user-modal').classList.add('show');
+}
+
+function openEditUserModal(id) {
+    const users = getUserList();
+    const u = users.find(x => x.id === id);
+    if (!u) return;
+    document.getElementById('user-modal-title').innerHTML = '<i class="fas fa-user-edit" style="color:var(--primary-light);margin-right:8px;"></i> Sửa người dùng';
+    document.getElementById('user-edit-id').value = id;
+    document.getElementById('user-username').value = u.username;
+    document.getElementById('user-username').setAttribute('readonly', true);
+    document.getElementById('user-fullname').value = u.name;
+    document.getElementById('user-role').value = u.role;
+    document.getElementById('user-password').value = '';
+    document.getElementById('user-password2').value = '';
+    document.getElementById('user-pwd-label').textContent = 'Mật khẩu mới';
+    document.getElementById('user-pwd-note').style.display = 'block';
+    document.getElementById('user-modal-error').style.display = 'none';
+    document.getElementById('user-modal').classList.add('show');
+}
+
+function closeUserModal() { document.getElementById('user-modal').classList.remove('show'); }
+
+function showUserError(msg) {
+    const el = document.getElementById('user-modal-error');
+    el.textContent = msg;
+    el.style.display = 'block';
+}
+
+function saveUser() {
+    const editId = document.getElementById('user-edit-id').value;
+    const username = document.getElementById('user-username').value.trim().toLowerCase();
+    const name = document.getElementById('user-fullname').value.trim();
+    const role = document.getElementById('user-role').value;
+    const pwd = document.getElementById('user-password').value;
+    const pwd2 = document.getElementById('user-password2').value;
+
+    document.getElementById('user-modal-error').style.display = 'none';
+
+    if (!username || !name) return showUserError('Vui lòng điền tên đăng nhập và họ tên.');
+    if (!/^[a-z0-9_]+$/.test(username)) return showUserError('Tên đăng nhập chỉ dùng chữ thường, số và dấu _');
+
+    const users = getUserList();
+
+    if (!editId) {
+        // Thêm mới — bắt buộc có mật khẩu
+        if (!pwd) return showUserError('Vui lòng nhập mật khẩu.');
+        if (pwd.length < 6) return showUserError('Mật khẩu tối thiểu 6 ký tự.');
+        if (pwd !== pwd2) return showUserError('Mật khẩu xác nhận không khớp.');
+        const exists = users.some(u => u.username === username) || !!USERS[username];
+        if (exists) return showUserError(`Tên đăng nhập "${username}" đã tồn tại.`);
+
+        const newUser = { id: Date.now(), username, name, role, status: 'active', builtin: false };
+        users.push(newUser);
+        localStorage.setItem('mrv_users_list', JSON.stringify(users));
+        // Cập nhật USERS in-memory để login ngay được
+        USERS[username] = { password: pwd, name, role, displayRole: role === 'admin' ? 'Quản trị viên' : 'Giám sát viên' };
+        // Lưu auth riêng cho reload
+        const auth = JSON.parse(localStorage.getItem('mrv_users_auth') || '{}');
+        auth[username] = { password: pwd, role, name };
+        localStorage.setItem('mrv_users_auth', JSON.stringify(auth));
+        addAuditEntry('Thêm người dùng', `${username} — ${name} (${role === 'admin' ? 'Quản trị viên' : 'Giám sát viên'})`, 'green');
+    } else {
+        // Sửa
+        if (pwd && pwd.length < 6) return showUserError('Mật khẩu tối thiểu 6 ký tự.');
+        if (pwd && pwd !== pwd2) return showUserError('Mật khẩu xác nhận không khớp.');
+
+        const idx = users.findIndex(u => u.id === parseInt(editId));
+        if (idx < 0) return;
+        users[idx] = { ...users[idx], name, role };
+        localStorage.setItem('mrv_users_list', JSON.stringify(users));
+        // Cập nhật in-memory
+        if (USERS[username]) {
+            USERS[username].name = name;
+            USERS[username].role = role;
+            USERS[username].displayRole = role === 'admin' ? 'Quản trị viên' : 'Giám sát viên';
+            if (pwd) USERS[username].password = pwd;
+        }
+        // Cập nhật auth
+        const auth = JSON.parse(localStorage.getItem('mrv_users_auth') || '{}');
+        if (auth[username] || !users[idx].builtin) {
+            auth[username] = { ...auth[username], name, role };
+            if (pwd) auth[username].password = pwd;
+            localStorage.setItem('mrv_users_auth', JSON.stringify(auth));
+        }
+        addAuditEntry('Sửa người dùng', `${username} — ${name}`, 'blue');
+    }
+
+    closeUserModal();
+    loadUserTable();
+}
+
+function deleteUser(id) {
+    const users = getUserList();
+    const u = users.find(x => x.id === id);
+    if (!u) return;
+    if (u.builtin) return alert('Không thể xóa tài khoản hệ thống mặc định.');
+    if (!confirm(`Xác nhận xóa tài khoản "${u.username}" — ${u.name}?`)) return;
+
+    const updated = users.filter(x => x.id !== id);
+    localStorage.setItem('mrv_users_list', JSON.stringify(updated));
+    delete USERS[u.username];
+    const auth = JSON.parse(localStorage.getItem('mrv_users_auth') || '{}');
+    delete auth[u.username];
+    localStorage.setItem('mrv_users_auth', JSON.stringify(auth));
+    addAuditEntry('Xóa người dùng', `${u.username} — ${u.name}`, 'red');
+    loadUserTable();
+}
 
 /* ========== FARM MANAGEMENT - Admin only ========== */
 

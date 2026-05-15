@@ -49,6 +49,7 @@ let currentPage = 'dashboard';
 
 // ===== INIT =====
 document.addEventListener('DOMContentLoaded', async () => {
+    loadCustomUsers();
     initParticles();
     initLogin();
     initDate();
@@ -59,6 +60,22 @@ document.addEventListener('DOMContentLoaded', async () => {
         showApp();
     }
 });
+
+function loadCustomUsers() {
+    try {
+        const auth = JSON.parse(localStorage.getItem('mrv_users_auth') || '{}');
+        Object.entries(auth).forEach(([username, data]) => {
+            if (!USERS[username]) {
+                USERS[username] = {
+                    password: data.password,
+                    name: data.name,
+                    role: data.role,
+                    displayRole: data.role === 'admin' ? 'Quản trị viên' : 'Giám sát viên'
+                };
+            }
+        });
+    } catch(e) {}
+}
 
 // ===== LOGIN PARTICLES =====
 function initParticles() {
