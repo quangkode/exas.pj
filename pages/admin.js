@@ -3,7 +3,7 @@ function renderUserMgmt(container) {
     const users = JSON.parse(localStorage.getItem('mrv_users_list') || JSON.stringify([
         { id: 1, username: 'giamsat', name: 'Nguyễn Văn An', role: 'supervisor', status: 'active' },
         { id: 2, username: 'giamsat2', name: 'Trần Thị Bình', role: 'supervisor', status: 'active' },
-        { id: 3, username: 'admin', name: 'Lê Quang Minh', role: 'admin', status: 'active' }
+        { id: 3, username: 'admin', name: 'Trần Minh Quang', role: 'admin', status: 'active' }
     ]));
 
     container.innerHTML = `

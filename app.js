@@ -4,7 +4,7 @@
 const USERS = {
     'giamsat': { password: 'gs@2025', name: 'Nguyễn Văn An', role: 'supervisor', displayRole: 'Giám sát viên' },
     'giamsat2': { password: 'gs2@2025', name: 'Trần Thị Bình', role: 'supervisor', displayRole: 'Giám sát viên' },
-    'admin': { password: 'admin@2025', name: 'Lê Quang Minh', role: 'admin', displayRole: 'Quản trị viên' }
+    'admin': { password: 'admin@2025', name: 'Trần Minh Quang', role: 'admin', displayRole: 'Quản trị viên', avatar: 'assets/avatar-admin.jpg' }
 };
 
 // ===== NAV CONFIG =====
@@ -121,6 +121,12 @@ function showApp() {
     document.getElementById('app').style.display = 'flex';
     document.getElementById('user-display-name').textContent = currentUser.name;
     document.getElementById('user-display-role').textContent = currentUser.displayRole;
+    const avatarEl = document.getElementById('user-avatar');
+    if (currentUser.avatar) {
+        avatarEl.innerHTML = `<img src="${currentUser.avatar}" alt="avatar" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">`;
+    } else {
+        avatarEl.innerHTML = '<i class="fas fa-user"></i>';
+    }
     if (typeof initDefaultFarms === 'function') initDefaultFarms();
     buildNav();
     navigateTo('dashboard');
