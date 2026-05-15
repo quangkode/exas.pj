@@ -33,6 +33,8 @@ function renderDashboard(container) {
             </div>
         </div>
 
+        <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin-bottom:16px;" id="dash-info-grid"></div>
+
         <div class="stats-grid" id="dash-stats-grid"></div>
 
         <div class="grid-2" style="margin-top:20px;">
@@ -77,6 +79,41 @@ function loadDashboardStats() {
     const socData  = farmFilter ? allSoc.filter(e => matchesFarm(e, farmFilter, allFarms)) : allSoc;
     const activeFarms = farmFilter ? allFarms.filter(f => f.name === farmFilter || f.code === farmFilter) : allFarms;
     const totalArea = activeFarms.reduce((s, f) => s + (parseFloat(f.area) || 0), 0) || 1;
+    const selectedFarm = activeFarms.length === 1 ? activeFarms[0] : null;
+
+    // ── 2 info cards ──
+    const infoGrid = document.getElementById('dash-info-grid');
+    if (infoGrid) {
+        if (selectedFarm) {
+            infoGrid.innerHTML = `
+                <div class="stat-card">
+                    <div class="stat-glow green"></div>
+                    <div class="stat-icon green"><i class="fas fa-seedling"></i></div>
+                    <div class="stat-value" style="font-size:17px;font-weight:700;line-height:1.3;">${selectedFarm.name}</div>
+                    <div class="stat-label">Nông hộ được chọn · Mã: ${selectedFarm.code || '--'}</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-glow blue"></div>
+                    <div class="stat-icon blue"><i class="fas fa-ruler-combined"></i></div>
+                    <div class="stat-value" style="font-size:22px;">${selectedFarm.area || '--'} <span style="font-size:14px;font-weight:400;">ha</span></div>
+                    <div class="stat-label">Diện tích canh tác</div>
+                </div>`;
+        } else {
+            infoGrid.innerHTML = `
+                <div class="stat-card" style="cursor:pointer;" onclick="navigateTo('farm-mgmt')">
+                    <div class="stat-glow green"></div>
+                    <div class="stat-icon green"><i class="fas fa-users"></i></div>
+                    <div class="stat-value">${allFarms.length || '--'}</div>
+                    <div class="stat-label">Tổng số nông hộ giám sát</div>
+                </div>
+                <div class="stat-card" style="cursor:pointer;" onclick="navigateTo('farm-map')">
+                    <div class="stat-glow blue"></div>
+                    <div class="stat-icon blue"><i class="fas fa-map-marked-alt"></i></div>
+                    <div class="stat-value">${totalArea.toFixed(1)} <span style="font-size:14px;font-weight:400;">ha</span></div>
+                    <div class="stat-label">Tổng diện tích dự án</div>
+                </div>`;
+        }
+    }
 
     // ── Emission calculations (same formulas as reporting.js) ──
     let fuelDiesel = 0, fuelPetrol = 0, fuelLpg = 0;
