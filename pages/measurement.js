@@ -284,7 +284,7 @@ function renderSoilData(container) {
         </div>
         <div class="card">
             <div class="table-wrapper">
-                <table class="data-table">
+                <table class="data-table" style="min-width:860px;">
                     <thead><tr><th>Ngày lấy mẫu</th><th>Nông hộ</th><th>Lớp đất</th><th>OC (g/kg)</th><th>SOC (%)</th><th>M<sub>n,dl</sub> (g)</th><th>D (mm) / N</th><th>M<sub>n,dl,SOC</sub> (tC/ha)</th><th>Phòng Lab</th><th>Ghi chú</th><th></th></tr></thead>
                     <tbody id="soc-table-body">
                         <tr><td colspan="11"><div class="empty-state"><i class="fas fa-vial"></i><p>Chưa có dữ liệu phân tích đất</p></div></td></tr>
@@ -299,7 +299,7 @@ function renderSoilData(container) {
                 <div class="card-title"><i class="fas fa-leaf" style="color:var(--success);"></i> Quản lý tàn dư sinh khối</div>
             </div>
             <div class="table-wrapper">
-                <table class="data-table" style="font-size:12px;">
+                <table class="data-table" style="font-size:12px;min-width:960px;">
                     <thead><tr>
                         <th>Ngày / Nông hộ</th>
                         <th>Thời kỳ</th>
