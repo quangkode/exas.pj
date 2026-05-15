@@ -19,7 +19,7 @@ function renderUserMgmt(container) {
         </div>
         <div class="card">
             <div class="table-wrapper">
-                <table class="data-table">
+                <table class="data-table" style="width:max-content;min-width:500px;">
                     <thead><tr><th>Tài khoản</th><th>Họ tên</th><th>Vai trò</th><th>Trạng thái</th><th></th></tr></thead>
                     <tbody>
                         ${users.map(u => `<tr>
@@ -36,7 +36,7 @@ function renderUserMgmt(container) {
         <div class="card" style="margin-top:20px;">
             <div class="card-header"><div class="card-title"><i class="fas fa-key"></i> Phân quyền theo vai trò</div></div>
             <div class="table-wrapper">
-                <table class="data-table">
+                <table class="data-table" style="width:max-content;min-width:400px;">
                     <thead><tr><th>Chức năng</th><th>Giám sát viên</th><th>Quản trị viên</th></tr></thead>
                     <tbody>
                         <tr><td>Xem Dashboard</td><td><i class="fas fa-check" style="color:var(--success);"></i></td><td><i class="fas fa-check" style="color:var(--success);"></i></td></tr>
@@ -106,7 +106,7 @@ function renderFarmMgmt(container) {
         </div>
         <div class="card">
             <div class="table-wrapper">
-                <table class="data-table">
+                <table class="data-table" style="width:max-content;min-width:1000px;">
                     <thead><tr>
                         <th>Mã</th><th>Họ tên chủ hộ</th><th>Địa chỉ</th><th>SĐT</th>
                         <th>Diện tích (ha)</th><th>Loại cây</th><th>Số cây</th>

@@ -47,7 +47,7 @@ function renderIoTData(container) {
                 <button class="btn btn-secondary btn-sm"><i class="fas fa-download"></i> Xuất CSV</button>
             </div>
             <div class="table-wrapper">
-                <table class="data-table">
+                <table class="data-table" style="width:max-content;min-width:600px;">
                     <thead><tr><th>Thời gian</th><th>Thiết bị</th><th>Nông hộ</th><th>Độ ẩm (%)</th><th>pH</th><th>Trạng thái</th></tr></thead>
                     <tbody>
                         <tr><td colspan="6"><div class="empty-state"><i class="fas fa-satellite-dish"></i><p>Chưa có dữ liệu cảm biến. Dữ liệu sẽ tự động cập nhật khi thiết bị được kết nối.</p></div></td></tr>
@@ -174,7 +174,7 @@ function renderDroneData(container) {
                 <div class="card-title"><i class="fas fa-table"></i> Lịch sử bay khảo sát</div>
             </div>
             <div class="table-wrapper">
-                <table class="data-table">
+                <table class="data-table" style="width:max-content;min-width:700px;">
                     <thead><tr>
                         <th>Ngày bay</th><th>Nông hộ</th><th>Diện tích (ha)</th>
                         <th>Thông số bay</th><th>File</th><th>Trạng thái</th><th></th>
@@ -287,7 +287,7 @@ function renderSoilData(container) {
         </div>
         <div class="card">
             <div class="table-wrapper">
-                <table class="data-table" style="min-width:860px;">
+                <table class="data-table" style="width:max-content;min-width:860px;">
                     <thead><tr><th>Ngày lấy mẫu</th><th>Nông hộ</th><th>Lớp đất</th><th>OC (g/kg)</th><th>SOC (%)</th><th>M<sub>n,dl</sub> (g)</th><th>D (mm) / N</th><th>M<sub>n,dl,SOC</sub> (tC/ha)</th><th>Phòng Lab</th><th>Ghi chú</th><th></th></tr></thead>
                     <tbody id="soc-table-body">
                         <tr><td colspan="11"><div class="empty-state"><i class="fas fa-vial"></i><p>Chưa có dữ liệu phân tích đất</p></div></td></tr>
@@ -302,7 +302,7 @@ function renderSoilData(container) {
                 <div class="card-title"><i class="fas fa-leaf" style="color:var(--success);"></i> Quản lý tàn dư sinh khối</div>
             </div>
             <div class="table-wrapper">
-                <table class="data-table" style="font-size:12px;min-width:960px;">
+                <table class="data-table" style="width:max-content;font-size:12px;min-width:960px;">
                     <thead><tr>
                         <th>Ngày / Nông hộ</th>
                         <th>Thời kỳ</th>

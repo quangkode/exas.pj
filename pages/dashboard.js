@@ -172,7 +172,7 @@ function renderDashboard(container) {
                     <div class="card-title"><i class="fas fa-vial"></i> Trữ lượng SOC theo nông hộ</div>
                 </div>
                 <div class="table-wrapper">
-                    <table class="data-table">
+                    <table class="data-table" style="width:max-content;min-width:600px;">
                         <thead><tr>
                             <th>Nông hộ</th><th>Diện tích</th>
                             <th>SOC đầu vụ (tC/ha)</th><th>SOC cuối vụ (tC/ha)</th>

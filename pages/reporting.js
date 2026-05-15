@@ -987,7 +987,7 @@ function renderEmissionCalc(container) {
                 <span id="ec-diary-count" style="font-size:12px;color:var(--text-muted);"></span>
             </div>
             <div class="table-wrapper">
-                <table class="data-table" style="font-size:12px;min-width:760px;">
+                <table class="data-table" style="width:max-content;font-size:12px;min-width:760px;">
                     <thead><tr>
                         <th>Ngày</th><th>Nông hộ</th><th>Phân bón (loại)</th>
                         <th>N (kg)</th><th>Loại N</th>

@@ -25,7 +25,7 @@ function renderEvidence(container) {
         <div class="card" style="margin-top:20px;">
             <div class="card-header"><div class="card-title"><i class="fas fa-folder-open"></i> Danh sách bằng chứng</div></div>
             <div class="table-wrapper">
-                <table class="data-table">
+                <table class="data-table" style="width:max-content;min-width:700px;">
                     <thead><tr><th>Ngày</th><th>Loại</th><th>Nông hộ</th><th>Mô tả</th><th>File</th><th>Người tải</th><th></th></tr></thead>
                     <tbody id="evidence-table">
                         <tr><td colspan="7"><div class="empty-state"><i class="fas fa-camera"></i><p>Chưa có bằng chứng số</p></div></td></tr>
@@ -113,7 +113,7 @@ function renderFarmMap(container) {
         <div class="card" style="margin-top:20px;">
             <div class="card-header"><div class="card-title"><i class="fas fa-list"></i> Danh sách nông hộ</div></div>
             <div class="table-wrapper">
-                <table class="data-table">
+                <table class="data-table" style="width:max-content;min-width:700px;">
                     <thead><tr><th>Mã</th><th>Tên chủ hộ</th><th>Địa chỉ</th><th>Diện tích (ha)</th><th>Loại cây</th><th>Tọa độ</th></tr></thead>
                     <tbody id="farmmap-table">
                         ${farms.length === 0

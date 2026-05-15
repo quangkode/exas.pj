@@ -28,8 +28,8 @@ function renderFarmDiary(container) {
             </select>
         </div>
         <div class="card">
-            <div class="table-wrapper" style="overflow-x:auto;">
-                <table class="data-table" style="min-width:900px;">
+            <div class="table-wrapper">
+                <table class="data-table" style="width:max-content;min-width:900px;">
                     <thead>
                         <tr>
                             <th>Ngày</th>
