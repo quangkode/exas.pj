@@ -321,16 +321,6 @@ function renderSoilData(container) {
             </div>
         </div>
 
-        <!-- Phân tích mối quan hệ biện chứng -->
-        <div class="card" style="margin-top:20px;" id="dialectical-analysis-card">
-            <div class="card-header">
-                <div class="card-title"><i class="fas fa-project-diagram" style="color:var(--warning);"></i> Phân tích mối quan hệ biện chứng 3 biến số</div>
-                <button class="btn btn-secondary btn-sm" onclick="runDialecticalAnalysis()"><i class="fas fa-sync"></i> Cập nhật</button>
-            </div>
-            <div id="dialectical-analysis-body" style="padding:20px;">
-                <div class="empty-state" style="padding:24px;"><i class="fas fa-project-diagram" style="font-size:28px;opacity:.3;display:block;margin-bottom:8px;"></i><p>Nhấn "Cập nhật" để phân tích mối liên hệ giữa Tàn dư sinh khối — SOC — Phát thải phân bón</p></div>
-            </div>
-        </div>
         <!-- Modal Import -->
         <div class="modal-overlay" id="soc-import-modal">
             <div class="modal" style="max-width:860px;">
@@ -827,7 +817,6 @@ function loadSOCData() {
     if (farmFilter?.value) calculateSOCStats();
 
     renderBiomassSection();
-    if (socEntries.length > 0) setTimeout(runDialecticalAnalysis, 200);
 }
 
 function deleteSOCEntry(id) {
