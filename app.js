@@ -248,6 +248,48 @@ function renderPage(page) {
     }
 }
 
+// ===== ONE-TIME DATA CLEANUP =====
+// Chạy trong console: cleanFarmData('Trần Minh Quang')
+function cleanFarmData(keepName) {
+    const name = keepName.trim();
+
+    // Farms
+    const farms = JSON.parse(localStorage.getItem('mrv_farms') || '[]');
+    const cleanFarms = farms.filter(f => f.name === name);
+    localStorage.setItem('mrv_farms', JSON.stringify(cleanFarms));
+
+    // Diaries
+    const diaries = JSON.parse(localStorage.getItem('mrv_diaries') || '[]');
+    const cleanDiaries = diaries.filter(d => d.farm === name);
+    localStorage.setItem('mrv_diaries', JSON.stringify(cleanDiaries));
+
+    // SOC
+    const soc = JSON.parse(localStorage.getItem('mrv_soc') || '[]');
+    const cleanSoc = soc.filter(s => s.farm === name);
+    localStorage.setItem('mrv_soc', JSON.stringify(cleanSoc));
+
+    // Drone
+    const drone = JSON.parse(localStorage.getItem('mrv_drone') || '[]');
+    const cleanDrone = drone.filter(d => d.farm === name);
+    localStorage.setItem('mrv_drone', JSON.stringify(cleanDrone));
+
+    // Sync lên Firebase nếu có
+    const keys = ['mrv_farms', 'mrv_diaries', 'mrv_soc', 'mrv_drone'];
+    if (window._db) {
+        keys.forEach(key => {
+            window._db.collection('mrv_data').doc(key).set({
+                value: localStorage.getItem(key),
+                updatedAt: new Date().toISOString()
+            }).catch(() => {});
+        });
+        console.log('[cleanFarmData] Đã sync lên Firebase.');
+    }
+
+    console.log(`[cleanFarmData] Xong. Farms: ${cleanFarms.length}, Diaries: ${cleanDiaries.length}, SOC: ${cleanSoc.length}, Drone: ${cleanDrone.length}`);
+    alert(`Đã xóa dữ liệu các nông hộ khác.\nChỉ giữ lại: ${name}\n• Farms: ${cleanFarms.length}\n• Diaries: ${cleanDiaries.length}\n• SOC: ${cleanSoc.length}\n• Drone: ${cleanDrone.length}`);
+    location.reload();
+}
+
 // ===== FARM MATCHING UTILITY =====
 // Matches a data entry (diary/SOC/etc.) to a farm filter value (code OR name).
 // Handles both old entries (farm-name only) and new entries (with farmCode).
