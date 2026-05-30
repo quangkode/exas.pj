@@ -517,7 +517,23 @@ function renderSettings(container) {
         </div>
         <div style="margin-top:20px;display:flex;gap:12px;">
             <button class="btn btn-primary"><i class="fas fa-save"></i> Lưu cài đặt</button>
-            <button class="btn btn-danger"><i class="fas fa-undo"></i> Khôi phục mặc định</button>
+        </div>
+        <div class="card" style="margin-top:20px;border-color:var(--danger);">
+            <div class="card-header"><div class="card-title" style="color:var(--danger);"><i class="fas fa-exclamation-triangle"></i> Vùng nguy hiểm</div></div>
+            <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;">
+                <div>
+                    <div style="font-weight:600;font-size:13px;">Xóa dữ liệu nông hộ khác</div>
+                    <div style="font-size:12px;color:var(--text-muted);margin-top:4px;">Chỉ giữ lại dữ liệu của <strong>Trần Minh Quang</strong>. Xóa vĩnh viễn nhật ký, SOC, drone của tất cả nông hộ còn lại.</div>
+                </div>
+                <button class="btn btn-danger" onclick="confirmCleanFarmData()" style="white-space:nowrap;flex-shrink:0;">
+                    <i class="fas fa-broom"></i> Dọn dữ liệu
+                </button>
+            </div>
         </div>
     `;
+}
+
+function confirmCleanFarmData() {
+    if (!confirm('Xác nhận xóa toàn bộ dữ liệu của các nông hộ KHÁC Trần Minh Quang?\n\nHành động này không thể hoàn tác.')) return;
+    cleanFarmData('Trần Minh Quang');
 }
