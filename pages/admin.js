@@ -520,20 +520,33 @@ function renderSettings(container) {
         </div>
         <div class="card" style="margin-top:20px;border-color:var(--danger);">
             <div class="card-header"><div class="card-title" style="color:var(--danger);"><i class="fas fa-exclamation-triangle"></i> Vùng nguy hiểm</div></div>
-            <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;">
-                <div>
-                    <div style="font-weight:600;font-size:13px;">Xóa dữ liệu nông hộ khác</div>
-                    <div style="font-size:12px;color:var(--text-muted);margin-top:4px;">Chỉ giữ lại dữ liệu của <strong>Trần Minh Quang</strong>. Xóa vĩnh viễn nhật ký, SOC, drone của tất cả nông hộ còn lại.</div>
+            <div style="margin-bottom:12px;">
+                <div style="font-weight:600;font-size:13px;margin-bottom:6px;">Xóa dữ liệu theo nông hộ</div>
+                <div style="font-size:12px;color:var(--text-muted);margin-bottom:12px;">Chọn nông hộ muốn <strong>giữ lại</strong> — toàn bộ nhật ký, SOC, drone của các nông hộ còn lại sẽ bị xóa vĩnh viễn.</div>
+                <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+                    <select id="clean-farm-select" style="flex:1;min-width:200px;border-color:var(--danger);"></select>
+                    <button class="btn btn-danger" onclick="confirmCleanFarmData()" style="white-space:nowrap;flex-shrink:0;">
+                        <i class="fas fa-broom"></i> Xóa dữ liệu nông hộ khác
+                    </button>
                 </div>
-                <button class="btn btn-danger" onclick="confirmCleanFarmData()" style="white-space:nowrap;flex-shrink:0;">
-                    <i class="fas fa-broom"></i> Dọn dữ liệu
-                </button>
             </div>
         </div>
     `;
+
+    // Populate farm dropdown
+    const farms = JSON.parse(localStorage.getItem('mrv_farms') || '[]');
+    const sel = document.getElementById('clean-farm-select');
+    if (sel) {
+        sel.innerHTML = farms.length === 0
+            ? '<option value="">Chưa có nông hộ nào</option>'
+            : farms.map(f => `<option value="${f.name}">${f.name} (${f.code})</option>`).join('');
+    }
 }
 
 function confirmCleanFarmData() {
-    if (!confirm('Xác nhận xóa toàn bộ dữ liệu của các nông hộ KHÁC Trần Minh Quang?\n\nHành động này không thể hoàn tác.')) return;
-    cleanFarmData('Trần Minh Quang');
+    const sel = document.getElementById('clean-farm-select');
+    const keepName = sel?.value;
+    if (!keepName) return alert('Không có nông hộ nào để chọn.');
+    if (!confirm(`Xác nhận chỉ giữ lại dữ liệu của "${keepName}"?\nToàn bộ dữ liệu nông hộ khác sẽ bị xóa vĩnh viễn.`)) return;
+    cleanFarmData(keepName);
 }
